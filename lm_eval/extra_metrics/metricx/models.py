@@ -12,6 +12,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+# Code adapted from Tower: An Open Multilingual Large Language Model for Translation-Related Tasks 
+# (Duarte M. Alves et al., 2024) available at https://github.com/deep-spin/tower-eval/tree/main
+
 """Model classes for MetricX, modified from the T5 versions in HF."""
 
 import copy

@@ -1,3 +1,5 @@
+# Code adapted from Tower: An Open Multilingual Large Language Model for Translation-Related Tasks 
+# (Duarte M. Alves et al., 2024) available at https://github.com/deep-spin/tower-eval/tree/main
 import torch
 from bleurt_pytorch import (
     BleurtConfig,
