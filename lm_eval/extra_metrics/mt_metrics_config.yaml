@@ -1,0 +1,54 @@
+mt_metrics:
+  bleu:
+    compute: True
+    lowercase: False
+    tokenize: null
+    smooth_method: "exp"
+    smooth_value: null
+    force: False
+    use_effective_order: False
+
+  ter:
+    compute: True
+    normalized: False
+    no_punct: False
+    asian_support: False
+    case_sensitive: False
+
+  chrf:
+    compute: True
+    char_order: 6
+    word_order: 0
+    beta: 2
+    remove_whitespace: True
+    eps_smoothing: False
+  
+  comet:
+    compute: True
+    batch_size: 8
+    checkpoint: "Unbabel/wmt22-comet-da"
+  
+  comet_kiwi:
+    compute: True
+    batch_size: 8 
+    checkpoint: "Unbabel/wmt22-cometkiwi-da"
+
+  xcomet:
+    compute: True
+    batch_size: 8
+    checkpoint: "Unbabel/XCOMET-XL"
+
+  bleurt:
+    compute: True
+    batch_size: 8
+    checkpoint: "lucadiliello/BLEURT-20-D12"
+
+  metricx:
+    compute: True
+    checkpoint: "google/metricx-23-xl-v2p0"
+    tokenizer: "google/mt5-xl"
+
+  metricx_qe:
+    compute: True
+    checkpoint: "google/metricx-23-qe-xl-v2p0"
+    tokenizer: "google/mt5-xl"
