@@ -39,7 +39,7 @@ from lm_eval.api.registry import (
 from lm_eval.caching.cache import load_from_cache, save_to_cache
 from lm_eval.filters import build_filter_ensemble
 from lm_eval.prompts import get_prompt
-
+from lm_eval.api.dataset_paths import dataset_paths
 
 ALL_OUTPUT_TYPES = [
     "loglikelihood",
@@ -276,6 +276,18 @@ class Task(abc.ABC):
             - `datasets.DownloadMode.FORCE_REDOWNLOAD`
                 Fresh download and fresh dataset.
         """
+
+        if self.DATASET_PATH in dataset_paths:                                                          # added by BSC
+            current_directory = os.getcwd()								                                # added by BSC
+            # move to lm-evaluation-harness path							                            # added by BSC
+            while os.path.basename(current_directory) != "lm-evaluation-harness":			            # added by BSC
+                current_directory = os.path.dirname(current_directory)					                # added by BSC
+            relative_data_path = dataset_paths[self.DATASET_PATH]                                       # added by BSC
+            path=os.path.join(current_directory, relative_data_path)                                    # added by BSC
+            print(f"Dataset loaded from local path: {path}")                                            # added by BSC
+        else:                                                                                           # added by BSC
+            path=self.DATASET_PATH                                                                      # added by BSC
+
         self.dataset = datasets.load_dataset(
             path=self.DATASET_PATH,
             name=self.DATASET_NAME,
