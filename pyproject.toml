@@ -39,6 +39,15 @@ dependencies = [
     "dill",
     "word2number",
     "more_itertools",
+    "fairseq>=0.12.2",
+    "ctranslate2>=4.3.1",
+    "streamlit>=1.37.1",
+    "unbabel-comet>=2.2.2",
+    "bleurt-pytorch>=0.0.1",
+    "st-annotated-text",
+    "plotly",
+    "rouge-score>=0.1.2",
+    "scipy>=1.12.0"
 ]
 
 [tool.setuptools.packages.find]
