@@ -147,7 +147,7 @@ for task_name, split_dt, target_lang in task_definitions:
         class_name,
         (HOLISTIC_BIAS_TASK,),
         {
-            'get_split': (lambda self: split),
+            'get_split': (lambda self, split_dt=split_dt: split_dt),
             'get_target': (lambda self, target_lang=target_lang: target_lang),
         }
     ) 
