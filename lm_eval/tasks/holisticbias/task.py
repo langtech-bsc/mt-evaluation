@@ -44,7 +44,13 @@ class HOLISTIC_BIAS_TASK(MTask):
     def create_dicts(self, source, result, row_value):
 
         res, dict_aggregated = {}, {}
-                
+        
+        res['toxicity'] = ( result, row_value )
+        res['matched_toxicity_list'] = (None)
+
+        dict_aggregated['toxicity'] = self.toxicity
+        dict_aggregated['matched_toxicity_list'] = self.matched_toxicity_list
+
         if self.metric_configs['comet_kiwi']['compute']:
             res["comet_kiwi"] = (source, result)
             res["comet_kiwi_segments"] = (None)
@@ -64,12 +70,6 @@ class HOLISTIC_BIAS_TASK(MTask):
 
         dict_aggregated["translations"] = self.get_translations
         dict_aggregated["sources"] = self.get_sources
-
-        res['toxicity'] = ( result, row_value )
-        res['matched_toxicity_list'] = (None)
-
-        dict_aggregated['toxicity'] = self.toxicity
-        dict_aggregated['matched_toxicity_list'] = self.matched_toxicity_list
 
         self.res = res
         self.dict_aggregated = dict_aggregated
@@ -101,10 +101,41 @@ class HOLISTIC_BIAS_TASK(MTask):
         
         n_toxic_sentences = df_Eval['toxic_phrase_count'].sum()
         self.matched_toxicity_list = list(df_Eval['matched_toxicity_list'].values)
+        self.selected_indices = [i for i, l in enumerate(self.matched_toxicity_list) if len(l) > 0]
         return n_toxic_sentences
 
     def matched_toxicity_list(self, aux=None):
-        return self.matched_toxicity_list
+        if len(self.selected_indices) > 0:
+            return [self.matched_toxicity_list[i] for i in self.selected_indices]
+        return []
+
+    def comet_kiwi_segments(self, aux=None):
+        if len(self.selected_indices) > 0:
+            return [self.comet_kiwi_segments_list[i] for i in self.selected_indices]
+        return []
+
+    def metricx_qe_segments(self, aux=None):
+        if len(self.selected_indices) > 0:
+            return [self.metricxqe_segments_list[i] for i in self.selected_indices]
+        return []
+
+    def get_translations(self, arr):
+        translations = [i for i in arr]
+        if len(self.selected_indices) > 0:
+            return [translations[i] for i in self.selected_indices]
+        return []
+    
+    def get_targets(self, arr):
+        targets = [i for i in arr]
+        if len(self.selected_indices) > 0:
+            return [targets[i] for i in self.selected_indices]
+        return []
+    
+    def get_sources(self, arr):
+        sources = [i for i in arr]
+        if len(self.selected_indices) > 0:
+            return [sources[i] for i in self.selected_indices]
+        return []
 
 
 languages = ['bg', 'ca', 'eu', 'gl', 'cs', 'da', 'de', 'el', 'en', 'es', 'et', 'fi', 'fr', 'ga', 'hr', 'hu', 'it', 'lt', 'lv', 'mt', 'nl', 'pl', 'pt', 'ro', 'sk', 'sl', 'sv', 'zh']
@@ -150,5 +181,5 @@ for task_name, split_dt, target_lang in task_definitions:
             'get_split': (lambda self, split_dt=split_dt: split_dt),
             'get_target': (lambda self, target_lang=target_lang: target_lang),
         }
-    ) 
+    )
     register_task(task_name)(task_class)
