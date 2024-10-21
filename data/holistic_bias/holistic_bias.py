@@ -35,20 +35,20 @@ _SPLITS = [ 'ability', 'age', 'body_type', 'characteristics', 'cultural',
             'sexual_orientation', 'socioeconomic_class', 'others']
 
 _CSV_FILES = {
-    "others": os.path.join("holistic_bias_dataset", "others.csv"),
-    "ability": os.path.join("holistic_bias_dataset", "ability.csv"),
-    "age": os.path.join("holistic_bias_dataset", "age.csv"),
-    "body_type": os.path.join("holistic_bias_dataset", "body_type.csv"),
-    "characteristics": os.path.join("holistic_bias_dataset", "characteristics.csv"),
-    "cultural": os.path.join("holistic_bias_dataset", "cultural.csv"),
-    "gender_and_sex": os.path.join("holistic_bias_dataset", "gender_and_sex.csv"),
-    "nationality": os.path.join("holistic_bias_dataset", "nationality.csv"),
-    "nonce": os.path.join("holistic_bias_dataset", "nonce.csv"),
-    "political_ideologies": os.path.join("holistic_bias_dataset", "political_ideologies.csv"),
-    "race_ethnicity": os.path.join("holistic_bias_dataset", "race_ethnicity.csv"),
-    "religion": os.path.join("holistic_bias_dataset", "religion.csv"),
-    "sexual_orientation": os.path.join("holistic_bias_dataset", "sexual_orientation.csv"),
-    "socioeconomic_class": os.path.join("holistic_bias_dataset", "socioeconomic_class.csv")
+    "others": os.path.join("holistic_bias_dataset", "others_mutox.csv"),
+    "ability": os.path.join("holistic_bias_dataset", "ability_mutox.csv"),
+    "age": os.path.join("holistic_bias_dataset", "age_mutox.csv"),
+    "body_type": os.path.join("holistic_bias_dataset", "body_type_mutox.csv"),
+    "characteristics": os.path.join("holistic_bias_dataset", "characteristics_mutox.csv"),
+    "cultural": os.path.join("holistic_bias_dataset", "cultural_mutox.csv"),
+    "gender_and_sex": os.path.join("holistic_bias_dataset", "gender_and_sex_mutox.csv"),
+    "nationality": os.path.join("holistic_bias_dataset", "nationality_mutox.csv"),
+    "nonce": os.path.join("holistic_bias_dataset", "nonce_mutox.csv"),
+    "political_ideologies": os.path.join("holistic_bias_dataset", "political_ideologies_mutox.csv"),
+    "race_ethnicity": os.path.join("holistic_bias_dataset", "race_ethnicity_mutox.csv"),
+    "religion": os.path.join("holistic_bias_dataset", "religion_mutox.csv"),
+    "sexual_orientation": os.path.join("holistic_bias_dataset", "sexual_orientation_mutox.csv"),
+    "socioeconomic_class": os.path.join("holistic_bias_dataset", "socioeconomic_class_mutox.csv")
 }
 
 

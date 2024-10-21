@@ -52,3 +52,7 @@ mt_metrics:
     compute: True
     checkpoint: "google/metricx-23-qe-xl-v2p0"
     tokenizer: "google/mt5-xl"
+
+  mutox:
+    checkpoint: "cointegrated/SONAR_200_text_encoder"
+    batch_size: 8
