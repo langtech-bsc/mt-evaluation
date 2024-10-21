@@ -149,12 +149,14 @@ lm_eval --model simplegenerator \
 
 ##### Flores, ntrex, nteu
 
-For evaluating a NMT model on ntrex, flores or nteu multi-parallel datasets you can use the following task names:
+For evaluating a NMT model on ntrex, flores, flores+ or nteu multi-parallel datasets you can use the following task names:
 
 | Dataset                   |     Task name    | Languages |
 | ---------------------- | ------------------ |------------------ |
 | flores-dev        | {src}_{tgt}_flores_dev | 200 |
 | flores-devtest    | {src}_{tgt}_flores_devtest | 200 |
+| flores+ dev        | {src}_{tgt}_flores+_dev | 215 |
+| flores+ devtest    | {src}_{tgt}_flores+_devtest | 208 |
 | ntrex    | {src}_{tgt}_ntrex | 128 |
 | nteu    | {src}_{tgt}_nteu | 25 |
 
@@ -262,6 +264,9 @@ This will generate a JSON file in `$output_dir` containing the following fields:
 #### Gender Bias-MT
 
 ##### Must-she
+
+> [!NOTE]  
+> The distribution of the must-she resource is temporarily suspended pending clarification of the new policy adopted by TED for the use of its proprietary data [fbk-Must-she](https://mt.fbk.eu/resources/).
 
 To run must-she, you can use the following task names, which allow you to specify the language direction to use:
 
