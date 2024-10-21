@@ -266,7 +266,7 @@ This will generate a JSON file in `$output_dir` containing the following fields:
 ##### Must-she
 
 > [!NOTE]  
-> The distribution of the must-she resource is temporarily suspended pending clarification of the new policy adopted by TED for the use of its proprietary data [fbk-Must-she](https://mt.fbk.eu/resources/).
+> The distribution of the must-she dataset is temporarily suspended pending clarification of the new policy adopted by TED for the use of its proprietary data. Check: [fbk-Must-she Link](https://mt.fbk.eu/resources/).
 
 To run must-she, you can use the following task names, which allow you to specify the language direction to use:
 
