@@ -386,7 +386,7 @@ When adding a new machine translation model, you need to specify the strucutre o
 
 For example, consider the following prompt definition:
 
-```json
+```bash
 prompt_structures:
   gemma2:
     prompt: "Translate from {src} to {tgt} the following sentence: {context}"
