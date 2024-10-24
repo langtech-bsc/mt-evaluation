@@ -225,13 +225,19 @@ class EvaluationTracker:
                     ensure_ascii=False,
                 )
 
-                path = Path(self.output_path if self.output_path else Path.cwd())
-                path = path.joinpath(self.general_config_tracker.model_name_sanitized)
-                path.mkdir(parents=True, exist_ok=True)
+                
+                #path = Path(self.output_path if self.output_path else Path.cwd())
+                #path = path.joinpath(self.general_config_tracker.model_name_sanitized) #MODIFIED BSC
+                #path.mkdir(parents=True, exist_ok=True)
 
-                self.date_id = datetime.now().isoformat().replace(":", "-")
-                file_results_aggregated = path.joinpath(f"results_{self.date_id}.json")
-                file_results_aggregated.open("w", encoding="utf-8").write(dumped)
+                #self.date_id = datetime.now().isoformat().replace(":", "-") #MODIFIED BSC
+                #file_results_aggregated = path.joinpath(f"results_{self.date_id}.json") #MODIFIED BSC
+                #path.open("w", encoding="utf-8").write(dumped)
+                
+                os.makedirs(os.path.dirname(self.output_path), exist_ok=True)
+
+                with open(self.output_path, 'w', encoding="utf-8") as f:
+                    f.write(dumped)
 
                 if self.api and self.push_results_to_hub:
                     repo_id = (

@@ -78,7 +78,7 @@ def main():
         docs = join_iters(iters)
 
         with open(
-            os.path.join(args.output_base_path, task_name), "w", encoding="utf8"
+            args.output_base_path, "w", encoding="utf8"
         ) as f:
             for i, doc in (
                 zip(range(args.num_examples), docs)

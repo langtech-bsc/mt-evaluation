@@ -368,7 +368,7 @@ def make_table(result_dict, column: str = "results", sort_results: bool = False)
                 se = "   N/A" if se == "N/A" else "%.4f" % se
                 values.append([k, version, f, n, m, hib, v, "±", se])
             else:
-                if isinstance(v, list) or isinstance(v, str): # Modified by BSC
+                if isinstance(v, list): # Modified by BSC
                     pass
                 else:
                     values.append([k, version, f, n, m, hib, v, "", ""])

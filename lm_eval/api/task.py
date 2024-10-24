@@ -1,5 +1,6 @@
 import abc
 import ast
+import os
 import logging
 import random
 import re
@@ -280,7 +281,7 @@ class Task(abc.ABC):
         if self.DATASET_PATH in dataset_paths:                                                          # added by BSC
             current_directory = os.getcwd()								                                # added by BSC
             # move to lm-evaluation-harness path							                            # added by BSC
-            while os.path.basename(current_directory) != "lm-evaluation-harness":			            # added by BSC
+            while os.path.basename(current_directory) != "mt-evaluation":			            # added by BSC
                 current_directory = os.path.dirname(current_directory)					                # added by BSC
             relative_data_path = dataset_paths[self.DATASET_PATH]                                       # added by BSC
             path=os.path.join(current_directory, relative_data_path)                                    # added by BSC
@@ -288,8 +289,9 @@ class Task(abc.ABC):
         else:                                                                                           # added by BSC
             path=self.DATASET_PATH                                                                      # added by BSC
 
+        
         self.dataset = datasets.load_dataset(
-            path=self.DATASET_PATH,
+            path=path,
             name=self.DATASET_NAME,
             data_dir=data_dir,
             cache_dir=cache_dir,
@@ -945,13 +947,14 @@ class ConfigurableTask(Task):
                     eval_logger.debug(
                         f'Both target_delimiter "{self.config.target_delimiter}" and target choice: "{choice}" do not have whitespace, ignore if the language you are evaluating on does not require/use whitespace'
                     )
-
+    """
     def download(self, dataset_kwargs: Optional[Dict[str, Any]] = None) -> None:
         self.dataset = datasets.load_dataset(
             path=self.DATASET_PATH,
             name=self.DATASET_NAME,
             **dataset_kwargs if dataset_kwargs is not None else {},
         )
+    """
 
     def has_training_docs(self) -> bool:
         if self.config.training_split is not None:

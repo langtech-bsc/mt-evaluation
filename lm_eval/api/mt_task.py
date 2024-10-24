@@ -10,13 +10,17 @@ import sacrebleu
 import random
 import yaml
 
+METRICS_MT = [  "bleu", "ter", "chrf", "comet", "comet_kiwi", "bleurt", 
+                "xcomet", "bleu_segments", "ter_segments", "chrf_segments", "comet_kiwi_segments", "comet_segments", "xcomet_segments", 
+                "xcomet_error_spans", "metricx", "metricx_segments", "metricx_qe", "metricx_qe_segments", 
+                "translations", "targets", "sources"]
 
 class MTask(ConfigurableTask):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.metric_configs = None
-    
+
     ############## METRICS ##############
     def bleu_corpus(self, arr):
         """
@@ -379,72 +383,7 @@ class MTask(ConfigurableTask):
         Returns:
             dict: A dictionary where keys are metric names and values are booleans indicating if higher values are better.
         """
-        return {k: True for k in ["bleu", "ter", "chrf", "comet", "comet_kiwi", "bleurt", 
-                                  "xcomet", "bleu_segments", "ter_segments", "chrf_segments", "comet_kiwi_segments", "comet_segments", "xcomet_segments", 
-                                  "xcomet_error_spans", "metricx", "metricx_segments", "metricx_qe", "metricx_qe_segments", 
-                                  "translations", "targets", "sources"]}
+        return {k: True for k in METRICS_MT}
     
     def get_target(self):
         return None
-
-    @utils.positional_deprecated
-    def fewshot_context(
-        self,
-        doc,
-        num_fewshot,
-        rnd=random.Random(1234),
-        description=None,
-    ):
-        """Returns a fewshot context string that is made up of a prepended description
-        (if provided), the `num_fewshot` number of examples, and an appended prompt example.
-
-        :param doc: str
-            The document as returned from training_docs, validation_docs, or test_docs.
-        :param num_fewshot: int
-            The number of fewshot examples to provide in the returned context string.
-        :param rnd: random.Random
-            The pseudo-random number generator used to randomly sample examples.
-            WARNING: This is currently a required arg although it's optionalized with a default `None`.
-        :param description: str
-            The task's description that will be prepended to the fewshot examples.
-        :returns: str
-            The fewshot context.
-        """
-        assert (
-            rnd is not None
-        ), "A `random.Random` generator argument must be provided to `rnd`"
-
-        description = description if description else ""
-
-        if num_fewshot == 0:
-            labeled_examples = ""
-        else:
-            # for sets with no training docs, draw from other set *but ensure no overlap with current doc*
-            if self.has_training_docs():
-                fewshotex = self.fewshot_examples(k=num_fewshot, rnd=rnd)
-            else:
-                if self._fewshot_docs is None:
-                    self._fewshot_docs = list(
-                        self.validation_docs()
-                        if self.has_validation_docs()
-                        else self.test_docs()
-                    )
-
-                fewshotex = rnd.sample(self._fewshot_docs, num_fewshot + 1)
-
-                # get rid of the doc that's the one we're evaluating, if it's in the fewshot
-                fewshotex = [x for x in fewshotex if x != doc][:num_fewshot]
-
-
-            labeled_examples = (
-                "[EOS_FEWSHOT]".join(
-                    [
-                        self.doc_to_text(doc) + '[SEP_FEWSHOT]' + self.doc_to_target(doc)
-                        for doc in fewshotex
-                    ]
-                )
-                + "[END_FEWSHOT]"
-            )
-
-        example = self.doc_to_text(doc)
-        return description + labeled_examples + example

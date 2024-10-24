@@ -26,7 +26,7 @@ ISO639_3_SCRIPT_TO_NAME = {
     'kmr_Latn': 'Northern Kurdish', 'kon_Latn': 'Kikongo', 'kor_Hang': 'Korean', 'lao_Laoo': 'Lao',
     'lij_Latn': 'Ligurian', 'lim_Latn': 'Limburgish', 'lin_Latn': 'Lingala', 'lit_Latn': 'Lithuanian',
     'lmo_Latn': 'Lombard', 'ltg_Latn': 'Latgalian', 'ltz_Latn': 'Luxembourgish', 'lua_Latn': 'Luba-Kasai',
-    'lug_Latn': 'Ganda', 'luo_Latn': 'Luo', 'lus_Latn': 'Mizo', 'lvs_Latn': 'Standard Latvian',
+    'lug_Latn': 'Ganda', 'luo_Latn': 'Luo', 'lus_Latn': 'Mizo', 'lvs_Latn': 'Latvian',
     'mag_Deva': 'Magahi', 'mai_Deva': 'Maithili', 'mal_Mlym': 'Malayalam', 'mar_Deva': 'Marathi',
     'min_Arab': 'Minangkabau (Arabic script)', 'min_Latn': 'Minangkabau (Latin script)', 'mkd_Cyrl': 'Macedonian', 'plt_Latn': 'Plateau Malagasy',
     'mlt_Latn': 'Maltese', 'mni_Beng': 'Meitei (Bengali script)', 'khk_Cyrl': 'Halh Mongolian', 'mos_Latn': 'Mossi',

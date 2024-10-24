@@ -698,3 +698,58 @@ def replace_placeholders(
     # Add the last part of the string
     result.append(parts[-1])
     return "".join(result)
+
+def group(arr, fn):
+    res = collections.defaultdict(list)
+
+    for ob in arr:
+        res[fn(ob)].append(ob)
+
+    return list(res.values())
+
+class Reorderer:
+    def __init__(self, arr: List[Any], fn: Callable) -> None:
+        """Reorder an array according to some function
+
+        Args:
+            arr (List[Any]): The initial array
+            fn (Callable[[Any], Any]): A function to determine the priority of elements
+        """
+        self.size = len(arr)
+        arr = list(enumerate(arr))
+        arr = group(arr, lambda x: fn(x[1]))
+        # arr = [([y[0] for y in x], x[0][1]) for x in arr]
+        # TODO: overhaul reorderer. It currently grouped requests by content but we don't want this
+        arr = [([y[0]], x[0][1]) for x in arr for y in x]
+        arr.sort(key=lambda x: fn(x[1]))
+
+        self.arr = arr
+
+    def get_reordered(self):
+        """Gets the reordered array
+
+        Returns:
+            List[Any]: The reordered array
+        """
+        return [x[1] for x in self.arr]
+
+    def get_original(self, newarr):
+        """Restores the original order of a new array based on the old array's order
+
+        Args:
+            newarr (List[Any]): The array to be restored
+
+        Returns:
+            List[Any]: The array restored to the original order
+        """
+        res = [None] * self.size
+        cov = [False] * self.size
+
+        for (inds, _), v in zip(self.arr, newarr):
+            for ind in inds:
+                res[ind] = v
+                cov[ind] = True
+
+        assert all(cov)
+
+        return res

@@ -15,12 +15,12 @@ from pathlib import Path
 
 import torch.nn.functional as F
 
-from lm_eval import utils
 from lm_eval.api.instance import Instance
 from lm_eval.api.model import LM
 from lm_eval.api.registry import register_model
 
-from lm_eval.utils import MultiTokenEOSCriteria, stop_sequences_criteria
+from lm_eval.models.utils import MultiTokenEOSCriteria, stop_sequences_criteria, get_dtype
+from lm_eval.models import utils
 
 from accelerate import Accelerator, find_executable_batch_size, DistributedType
 from typing import List, Optional, Union, Tuple
@@ -218,13 +218,13 @@ class HF_MT(LM):
                     if bnb_4bit_quant_type:
                         model_kwargs["bnb_4bit_quant_type"] = bnb_4bit_quant_type
                     if bnb_4bit_compute_dtype:
-                        model_kwargs["bnb_4bit_compute_dtype"] = utils.get_dtype(
+                        model_kwargs["bnb_4bit_compute_dtype"] = get_dtype(
                             bnb_4bit_compute_dtype
                         )
             self._model = self.AUTO_MODEL_CLASS.from_pretrained(
                 pretrained,
                 revision=revision,
-                torch_dtype=utils.get_dtype(dtype),
+                torch_dtype=get_dtype(dtype),
                 low_cpu_mem_usage=low_cpu_mem_usage,
                 trust_remote_code=trust_remote_code,
                 load_in_8bit=load_in_8bit,
@@ -988,7 +988,7 @@ class HF_MT(LM):
                     kwargs = copy.deepcopy(gen_kwargs)  # edge case for repeats > 1
                     if "until" in kwargs.keys():
                         until = kwargs.pop("until")
-                        until = ast.literal_eval(until)
+                        #until = ast.literal_eval(until)
                         #eval_logger.info(until)
                         if isinstance(until, str):
                             until = [kwargs]
@@ -1051,7 +1051,7 @@ class HF_MT(LM):
                     
                     # use secondary stop seqs to cut off should-have-been-stopped content post-hoc
                     #print(until)
-                    stop_terms = ['\n', '\\n']
+                    stop_terms = ['\n']
                     until += stop_terms
                     for term in until:
                         if len(term) > 0:
