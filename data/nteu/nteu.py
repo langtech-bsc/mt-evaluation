@@ -135,6 +135,7 @@ class NTEU(datasets.GeneratorBasedBuilder):
         #with open(metadata_path, "r") as metadata_file:
         #    metadata_lines = [l.strip() for l in metadata_file.readlines()[1:]]
         for id_ in range(N):
+            
             yield id_, {
                 **{
                     f"sentence_{lang}": sentences[lang][id_]
