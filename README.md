@@ -106,7 +106,7 @@ tgt_language='cat_Latn'
 prompt_style='nllb'
 output_dir='results/nllb600_hf/results_en_ca_flores_devtest.json'
 
-lm_eval --model hf-mt \
+lm_eval --model hf_mt \
         --model_args "pretrained=${model},src_language=${src_language},tgt_language=${tgt_language},prompt_style=${prompt_style},trust_remote_code=True,dtype=bfloat16" \
         --tasks en_ca_flores_devtest \
         --num_fewshot 0 \
@@ -183,7 +183,7 @@ tgt_language='spa_Latn'
 prompt_style='nllb'
 output_dir='results/nllb600_hf/results_en_es_flores_dev.json'
 
-lm_eval --model hf-mt \
+lm_eval --model hf_mt \
         --model_args "pretrained=${model},src_language=${src_language},tgt_language=${tgt_language},prompt_style=${prompt_style},trust_remote_code=True,dtype=bfloat16" \
         --tasks en_es_flores_dev \
         --num_fewshot 0 \
@@ -237,7 +237,7 @@ tgt_language='spa_Latn'
 prompt_style='nllb'
 output_dir='results/nllb600_hf/results_en_es_age_hb.json'
 
-lm_eval --model hf-mt \
+lm_eval --model hf_mt \
         --model_args "pretrained=${model},src_language=${src_language},tgt_language=${tgt_language},prompt_style=${prompt_style},trust_remote_code=True,dtype=bfloat16" \
         --tasks en_es_age_hb \
         --num_fewshot 0 \
@@ -292,7 +292,7 @@ tgt_language='spa_Latn'
 prompt_style='nllb'
 output_dir='results/nllb600_hf/results_en_es_must_she.json'
 
-lm_eval --model hf-mt \
+lm_eval --model hf_mt \
         --model_args "pretrained=${model},src_language=${src_language},tgt_language=${tgt_language},prompt_style=${prompt_style},trust_remote_code=True,dtype=bfloat16" \
         --tasks en_es_must_she \
         --num_fewshot 0 \
@@ -307,8 +307,8 @@ lm_eval --model hf-mt \
 
 This will generate a JSON file in `$output_dir` containing the same metrics as a General-MT as well as the following fields:
 
-- `must_she_scores`:
-- `sentence_level_scores`:
+- `must_she_scores`
+- `sentence_level_scores`
 
 
 ##### Massive Multilingual HolisticBias (MMHB)
@@ -345,7 +345,7 @@ tgt_language='spa_Latn'
 prompt_style='nllb'
 output_dir='results/nllb600_hf/results_en_es_mmhb_dev.json'
 
-lm_eval --model hf-mt \
+lm_eval --model hf_mt \
         --model_args "pretrained=${model},src_language=${src_language},tgt_language=${tgt_language},prompt_style=${prompt_style},trust_remote_code=True,dtype=bfloat16" \
         --tasks en_es_mmhb_dev \
         --num_fewshot 0 \
@@ -405,9 +405,9 @@ prompt_structures:
 
 - **`prompt`**: This is the main structure of the prompt. In this case: "Translate from {src} to {tgt} the following sentence: {context}." The `{src}`, `{tgt}`, and `{context}` placeholders will be replaced with the source language, target language, and the source sentence to be translated, respectively.
   
-- **`language_map`**: When set to `True`, this option maps the source and target languages given in the task using the mapping defined in `mapping_type`.
+- `language_map`: When set to `True`, this option maps the source and target languages given in the task using the mapping defined in `mapping_type`.
 
-- **`mapping_type`**: This defines the type of language code mapping to use. In this example, `ISO639_3_SCRIPT_TO_NAME` means that the system will map ISO 639-3 codes (three-letter language codes) to language names, considering the script used (e.g., "eng_Latn" for English in the Latin script). The language mapping used must be defined in the `./lm_eval/prompts/mappings.py` file.
+- `mapping_type`: This defines the type of language code mapping to use. In this example, `ISO639_3_SCRIPT_TO_NAME` means that the system will map ISO 639-3 codes (three-letter language codes) to language names, considering the script used (e.g., "eng_Latn" for English in the Latin script). The language mapping used must be defined in the `./lm_eval/prompts/mappings.py` file.
 
 
 ### Metrics
