@@ -1,7 +1,7 @@
 import streamlit as st
 from utils import *
 
-DATA_PATH_csv = '../data/results_summary.csv'
+DATA_PATH_csv = '../results_summary/results_summary.csv'
 
 def main():
     st.set_page_config(page_title="Overview", page_icon="🍋", layout="wide")

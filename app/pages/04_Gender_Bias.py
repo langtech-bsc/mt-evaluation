@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
 
-DATA_PATH_csv = '../data/results_summary.csv'
-DATA_PATH = '../data'
+DATA_PATH_csv = '../results_summary/results_summary.csv'
+DATA_PATH = '../results'
 
 
 def main():
