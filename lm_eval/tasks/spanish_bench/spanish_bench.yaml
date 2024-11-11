@@ -1,4 +1,4 @@
-tag: spanish_bench
+group: spanish_bench
 task:
   - belebele_spa_Latn
   - copa_es
