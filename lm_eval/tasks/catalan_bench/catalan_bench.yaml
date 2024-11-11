@@ -1,4 +1,4 @@
-tag: catalan_bench
+group: catalan_bench
 task:
     - belebele_cat_Latn
     - xnli_ca
