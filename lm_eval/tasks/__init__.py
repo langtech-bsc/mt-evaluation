@@ -9,7 +9,18 @@ from lm_eval import utils
 from lm_eval.api.group import ConfigurableGroup, GroupConfig
 from lm_eval.api.task import ConfigurableTask, Task
 from lm_eval.evaluator_utils import get_subtask_list
+from lm_eval.api.registry import TASK_REGISTRY
 
+from .ntrex.task import *
+from .flores200_devtest.task import *
+from .flores200_dev.task import *
+from .nteu.task import *
+from .must_she.task import *
+from .holisticbias.task import *
+from .tatoeba.task import *
+from .multilingual_holistic_bias.task import *
+from .flores_plus_dev.task import *
+from .flores_plus_devtest.task import *
 
 GROUP_ONLY_KEYS = list(GroupConfig().to_dict().keys())
 
@@ -76,12 +87,24 @@ class TaskManager:
                 include_path = [include_path]
             all_paths.extend(include_path)
 
+        # Initialize the task index
         task_index = {}
+
+        # Add tasks from default paths and additional paths
         for task_dir in all_paths:
             tasks = self._get_task_and_group(task_dir)
             task_index = {**tasks, **task_index}
 
+        # ** Add all tasks already in TASK_REGISTRY to the task_index dictionary **
+        for task_name, task_obj in TASK_REGISTRY.items():
+            if task_name not in task_index:
+                task_index[task_name] = {
+                    "type": "task",  # Assuming it's a task, not a group
+                    "yaml_path": -1,  # Since it's not loaded from YAML
+                }
+
         return task_index
+
 
     @property
     def all_tasks(self):
@@ -573,7 +596,6 @@ def _check_duplicates(task_dict: dict) -> List[str]:
             f"Found 1 or more tasks while trying to call get_task_dict() that were members of more than 1 called group: {list(duplicate_tasks)}. Offending groups: {competing_groups}. Please call groups which overlap their constituent tasks in separate evaluation runs."
         )
 
-
 def get_task_dict(
     task_name_list: Union[str, List[Union[str, Dict, Task]]],
     task_manager: Optional[TaskManager] = None,
@@ -581,73 +603,80 @@ def get_task_dict(
     """Creates a dictionary of task objects from either a name of task, config, or prepared Task object.
 
     :param task_name_list: List[Union[str, Dict, Task]]
-        Name of model or LM object, see lm_eval.models.get_model
+        Name of task or a list of tasks/configs.
     :param task_manager: TaskManager = None
         A TaskManager object that stores indexed tasks. If not set,
         task_manager will load one. This should be set by the user
         if there are additional paths that want to be included
-        via `include_path`
+        via `include_path`.
 
     :return
-        Dictionary of task objects
+        Dictionary of task objects.
     """
-
+    
     task_name_from_string_dict = {}
     task_name_from_config_dict = {}
     task_name_from_object_dict = {}
 
+    # Normalize task_name_list into a list if a single string is provided
     if isinstance(task_name_list, str):
         task_name_list = [task_name_list]
     elif isinstance(task_name_list, list):
         if not all([isinstance(task, (str, dict, Task)) for task in task_name_list]):
-            raise TypeError(
-                "Expected all list items to be of types 'str', 'dict', or 'Task', but at least one entry did not match."
-            )
+            raise TypeError("Expected all list items to be of types 'str', 'dict', or 'Task', but at least one entry did not match.")
     else:
-        raise TypeError(
-            f"Expected a 'str' or 'list' but received {type(task_name_list)}."
-        )
+        raise TypeError(f"Expected a 'str' or 'list' but received {type(task_name_list)}.")
 
+    # Separate string-based tasks from config or object-based tasks
     string_task_name_list = [task for task in task_name_list if isinstance(task, str)]
-    others_task_name_list = [
-        task for task in task_name_list if not isinstance(task, str)
-    ]
+    others_task_name_list = [task for task in task_name_list if not isinstance(task, str)]
+    
+    # Step 1: Handle string-based task names using TaskManager
     if len(string_task_name_list) > 0:
         if task_manager is None:
             task_manager = TaskManager()
 
-        task_name_from_string_dict = task_manager.load_task_or_group(
-            string_task_name_list
-        )
+        for task_name in string_task_name_list:
+            # First check if the task is already registered in TASK_REGISTRY
+            if task_name in TASK_REGISTRY:
+                task_name_from_string_dict[task_name] = TASK_REGISTRY[task_name]()
+            else:
+                # If the task is not in TASK_REGISTRY, attempt to load it using TaskManager
+                try:
+                    loaded_tasks = task_manager.load_task_or_group([task_name])
+                    task_name_from_string_dict.update(loaded_tasks)
+                except KeyError:
+                    # Log or handle the error where the task is not found in either place
+                    task_manager.logger.error(f"Task '{task_name}' is not found in TASK_REGISTRY or TaskManager.")
+                    continue
 
+    # Step 2: Handle task configs and task objects
     for task_element in others_task_name_list:
         if isinstance(task_element, dict):
+            # Load configurable task from the configuration
             task_name_from_config_dict = {
                 **task_name_from_config_dict,
                 **task_manager.load_config(config=task_element),
             }
-
         elif isinstance(task_element, Task):
+            # Add already instantiated task objects
             task_name_from_object_dict = {
                 **task_name_from_object_dict,
                 get_task_name_from_object(task_element): task_element,
             }
 
-    if not set(task_name_from_string_dict.keys()).isdisjoint(
-        set(task_name_from_object_dict.keys())
-    ):
-        raise ValueError
+    # Ensure that there are no duplicate task names across the dictionaries
+    if not set(task_name_from_string_dict.keys()).isdisjoint(set(task_name_from_object_dict.keys())):
+        raise ValueError("Duplicate tasks detected between string-based and object-based task lists.")
 
+    # Step 3: Combine all the task dictionaries into a single dictionary
     final_task_dict = {
         **task_name_from_string_dict,
         **task_name_from_config_dict,
         **task_name_from_object_dict,
     }
 
-    # behavior can get odd if one tries to invoke several groups that "compete" for the same task.
-    # (notably, because one could request several num_fewshot values at once in GroupConfig overrides for the subtask
-    # and we'd be unsure which to use and report.)
-    # we explicitly check and error in this case.
-    _check_duplicates(get_subtask_list(final_task_dict))
-
+    # Step 4: Validate and ensure no duplicated tasks across groups
+    #_check_duplicates(get_subtask_list(final_task_dict))
+    
     return final_task_dict

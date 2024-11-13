@@ -1,0 +1,34 @@
+prompt_structures:
+
+  gemma2:
+    prompt: "Translate from {src} to {tgt} the following sentence: {context}"
+    language_map: True
+    mapping_type: ISO639_3_SCRIPT_TO_NAME
+
+  nllb:
+    prompt: "{context}"
+    language_map: False
+
+  madlad400:
+    prompt: "<2{tgt}> {context}"
+    language_map: True
+    mapping_type: ISO639_3_SCRIPT_TO_ISO639_1
+
+  salamandra:
+    prompt: "{src} sentence: {context} \n\n  {tgt} sentence:"
+    language_map: True
+    mapping_type: ISO639_3_SCRIPT_TO_NAME
+
+  eurollm_base:
+    prompt: "{src}: {context} {tgt}:"
+    language_map: True
+    mapping_type: ISO639_3_SCRIPT_TO_NAME
+
+  eurollm_instruct:
+    prompt: "<|im_start|>system\n<|im_end|>\n<|im_start|>user\nTranslate the following {src} source text to {tgt}:\n{src}: {context} \n{tgt}: <|im_end|>\n<|im_start|>assistant\n"
+    language_map: True
+    mapping_type: ISO639_3_SCRIPT_TO_NAME
+
+  default:
+    prompt: "{context}"
+    language_map: False

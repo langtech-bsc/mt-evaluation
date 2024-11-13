@@ -13,6 +13,7 @@ from lm_eval.api.metrics import (
 from lm_eval.api.task import Task
 from lm_eval.utils import eval_logger, positional_deprecated
 
+from lm_eval.api.mt_task import METRICS_MT
 
 class TaskOutput:
     """
@@ -243,11 +244,16 @@ def prepare_print_tasks(
                 else item[0],
             )
         )
-
+    
     task_agg = collections.defaultdict(dict)
     group_agg = collections.defaultdict(dict)
     task_dict = _sort_task_dict(task_dict)
+
+    #print(task_dict)
+    #print(results)
+
     for task_or_group_name, task_or_group_obj in task_dict.items():
+
         tab_string = " " * task_depth + "- " if task_depth > 0 else ""
         if isinstance(task_or_group_name, ConfigurableGroup):
             # string_name = task_or_group_name.group_name
@@ -256,7 +262,7 @@ def prepare_print_tasks(
             task_or_group_obj = _sort_task_dict(task_or_group_obj)
         elif isinstance(task_or_group_name, str):
             name = task_or_group_name
-            if isinstance(task_or_group_obj, Task):
+            if isinstance(task_or_group_obj, Task) and task_or_group_obj.task_name is not None:
                 # string_name = task_or_group_obj.task_name
                 name = task_or_group_obj.task_name
             from_configurable_group = False
@@ -350,15 +356,28 @@ def consolidate_results(
         versions[task_output.task_name] = task_output.version
         samples[task_output.task_name] = task_output.logged_samples
         higher_is_better[task_output.task_name] = task_output.task.higher_is_better()
+
+
         for (metric, filter_key), items in task_output.sample_metrics.items():
-            metric_key = f"{metric},{filter_key}"
-            results[task_output.task_name][metric_key] = task_output.agg_metrics[
-                metric_key
-            ]
-            results[task_output.task_name]["samples"] = task_output.sample_len
-            results[task_output.task_name][f"{metric}_stderr,{filter_key}"] = (
-                task_output.agg_metrics[f"{metric}_stderr,{filter_key}"]
-            )
+            
+            if metric not in METRICS_MT:
+                metric_key = f"{metric},{filter_key}"
+                results[task_output.task_name][metric_key] = task_output.agg_metrics[
+                    metric_key
+                ]
+                results[task_output.task_name]["samples"] = task_output.sample_len
+                results[task_output.task_name][f"{metric}_stderr,{filter_key}"] = (
+                    task_output.agg_metrics[f"{metric}_stderr,{filter_key}"]
+                )
+
+            else:
+
+                metric_key = f"{metric},none"
+                results[task_output.task_name][metric_key] = task_output.agg_metrics[
+                    metric_key
+                ]
+                results[task_output.task_name]["samples"] = task_output.sample_len
+        
     return results, samples, configs, versions, num_fewshot, higher_is_better
 
 

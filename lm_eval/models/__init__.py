@@ -15,6 +15,9 @@ from . import (
     textsynth,
     vllm_causallms,
     vllm_vlms,
+    hf_mt,
+    simple,
+    ctranslate2
 )
 
 
