@@ -2,7 +2,7 @@ import numpy as np
 from lm_eval.extra_metrics.bleurt.metric import BLEURT
 from lm_eval.extra_metrics.comet.metric import BaseCOMET
 from lm_eval.extra_metrics.comet_kiwi.metric import COMETKiwi
-from lm_eval.extra_metrics.xcomet.metric import XCOMET
+from lm_eval.extra_metrics.xcomet.metric import XCOMET, XCOMET_QE
 from lm_eval.extra_metrics.metricx.metric import RefMetricX, QEMetricX
 from lm_eval.api.task import ConfigurableTask
 from lm_eval import utils
@@ -11,8 +11,8 @@ import random
 import yaml
 
 METRICS_MT = [  "bleu", "ter", "chrf", "comet", "comet_kiwi", "bleurt", 
-                "xcomet", "bleu_segments", "ter_segments", "chrf_segments", "comet_kiwi_segments", "comet_segments", "xcomet_segments", 
-                "xcomet_error_spans", "metricx", "metricx_segments", "metricx_qe", "metricx_qe_segments", 
+                "xcomet", "xcomet_qe", "bleu_segments", "ter_segments", "chrf_segments", "comet_kiwi_segments", "comet_segments", "xcomet_segments", "xcomet_qe_segments", 
+                "xcomet_error_spans", "xcomet_qe_error_spans", "metricx", "metricx_segments", "metricx_qe", "metricx_qe_segments", 
                 "translations", "targets", "sources"]
 
 class MTask(ConfigurableTask):
@@ -161,6 +161,26 @@ class MTask(ConfigurableTask):
         self.xcomet_segments_list = xcometxl_result['segments_scores']
         return xcometxl_result['system_score']
 
+    def xcomet_qe_corpus(self, arr):
+        """
+        Computes the XCOMET-XL score for the corpus.
+        Args:
+            arr (list): A list of tuples containing source, and translation triples.
+
+        Returns:
+            float: The XCOMET QE score.
+        """
+
+        batch_size = self.metric_configs['xcomet_qe']['batch_size']
+        ck_name = self.metric_configs['xcomet_qe']['checkpoint']
+        self.xcometxl_qe = XCOMET_QE(ck_name)
+        sources = [i[0] for i in arr]
+        translations = [i[1] for i in arr]
+        xcometxl_qe_result = self.xcometxl_qe.evaluate(translations, [], sources, batch_size )
+        self.xcomet_qe_error_spans_list = xcometxl_qe_result["error_spans"]
+        self.xcomet_qe_segments_list = xcometxl_qe_result['segments_scores']
+        return xcometxl_qe_result['system_score']
+
     def metricx_corpus(self, arr):
         """
         Computes the MetricX score for the corpus.
@@ -243,6 +263,12 @@ class MTask(ConfigurableTask):
     def xcomet_error_spans(self, aux=None):
         return self.xcomet_error_spans_list
 
+    def xcomet_qe_segments(self, aux=None):
+        return self.xcomet_qe_segments_list
+
+    def xcomet_qe_error_spans(self, aux=None):
+        return self.xcomet_qe_error_spans_list
+
     def metricx_segments(self, aux=None):
         return self.metricx_segments_list
     
@@ -306,7 +332,6 @@ class MTask(ConfigurableTask):
 
             dict_aggregated["comet"] = self.comet_corpus
             dict_aggregated["comet_segments"] = self.comet_segments
-
                 
         if self.metric_configs['comet_kiwi']['compute']:
             res["comet_kiwi"] = (source, result)
@@ -328,6 +353,15 @@ class MTask(ConfigurableTask):
             dict_aggregated["xcomet"] = self.xcomet_corpus
             dict_aggregated["xcomet_segments"] = self.xcomet_segments
             dict_aggregated["xcomet_error_spans"] = self.xcomet_error_spans
+
+        if self.metric_configs['xcomet_qe']['compute']: 
+            res["xcomet_qe"] = (source, result)
+            res["xcomet_qe_segments"] = (None)
+            res["xcomet_qe_error_spans"] = (None)
+
+            dict_aggregated["xcomet_qe"] = self.xcomet_qe_corpus
+            dict_aggregated["xcomet_qe_segments"] = self.xcomet_qe_segments
+            dict_aggregated["xcomet_qe_error_spans"] = self.xcomet_qe_error_spans
 
         if self.metric_configs['metricx']['compute']:
             res["metricx"] = (target, result)

@@ -43,3 +43,16 @@ class XCOMET():
                         }
                         
         return comet_result
+
+
+class XCOMET_QE(XCOMET):
+
+    def __init__(self, model):
+        super().__init__(model=model)
+
+    def make_samples(self, sources: list[str], hypotheses: list[str], references: list[str]):
+
+        samples = {"src": sources, "mt": hypotheses}
+        samples = [dict(zip(samples, t)) for t in zip(*samples.values())]
+        
+        return samples
