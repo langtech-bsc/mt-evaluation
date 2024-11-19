@@ -6,6 +6,16 @@ from plotly.subplots import make_subplots
 import streamlit as st
 import pandas as pd
 
+
+def is_valid_mt_dataset(name):
+    # Check the dataset name against conditions
+    return all([
+        'hb' not in name,
+        name != 'perturbations',
+        name != 'must_she',
+        'mmhb' not in name
+    ])
+    
 def plot_language_comparison_spider(data, metric, init=0, limit=100, srcxx = 'ca', tgtxx = 'ca'):
 
     models = data['model_name'].unique()
