@@ -27,32 +27,41 @@ mt_metrics:
     compute: True
     batch_size: 8
     checkpoint: "Unbabel/wmt22-comet-da"
-  
+
   comet_kiwi:
     compute: True
     batch_size: 8 
     checkpoint: "Unbabel/wmt22-cometkiwi-da"
 
   xcomet:
-    compute: True
+    compute: False
+    batch_size: 8
+    checkpoint: "Unbabel/XCOMET-XL"
+
+  xcomet_qe:
+    compute: False
     batch_size: 8
     checkpoint: "Unbabel/XCOMET-XL"
 
   bleurt:
-    compute: True
+    compute: False
     batch_size: 8
     checkpoint: "lucadiliello/BLEURT-20-D12"
 
   metricx:
-    compute: True
+    compute: False
     checkpoint: "google/metricx-23-xl-v2p0"
     tokenizer: "google/mt5-xl"
 
   metricx_qe:
-    compute: True
+    compute: False
     checkpoint: "google/metricx-23-qe-xl-v2p0"
     tokenizer: "google/mt5-xl"
 
   mutox:
     checkpoint: "cointegrated/SONAR_200_text_encoder"
+    batch_size: 8
+
+  detoxify:
+    compute: True
     batch_size: 8
