@@ -34,7 +34,7 @@ def main():
         if filtered_dataset.empty:
             st.warning("No data available for the selected dataset and model(s). Please try different options.")
         else:
-            selected_limit = filtered_dataset[metric_chart_selected].max() + (5 if metric_chart_selected in ['bleu', 'ter','chrf', 'metricx', 'metricx_qe'] else 0.05)
+            selected_limit = float(filtered_dataset[metric_chart_selected].max()) + (5 if metric_chart_selected in ['bleu', 'ter','chrf', 'metricx', 'metricx_qe'] else 0.05)
             fig = plot_language_comparison_spider(filtered_dataset, metric_chart_selected, limit=selected_limit, srcxx = srcxx, tgtxx = tgtxx)
             st.plotly_chart(fig, use_container_width=True, theme=None)
 
