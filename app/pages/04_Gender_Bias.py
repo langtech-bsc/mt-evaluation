@@ -177,23 +177,24 @@ def main():
         with tab2:
             
 
-            set_selected, target_col, models_selected = st.columns(3)
+            set_selected, target_col_mmhb, models_selected_mmhb = st.columns(3)
             available_sets = [i for i in df['dataset'].unique() if 'mmhb' in i]
 
             with set_selected:
                 selected_set = st.selectbox('Select Subset', available_sets)
+
             mmhb_filtered = df.loc[df['dataset'] == selected_set]
 
-            with target_col:
-                target_selected = st.selectbox('Select Target Language', sorted( mmhb_filtered['target'].unique() ) )
+            with target_col_mmhb:
+                target_selected_mmhb = st.selectbox('Select Target Language', sorted( mmhb_filtered['target'].unique() ) )
+            mmhb_filtered = mmhb_filtered.loc[mmhb_filtered['target'] == target_selected_mmhb]
 
-            with models_selected:
-                selected_models = st.multiselect('Select models to compare', options = mmhb_filtered['model_name'].unique())
+            with models_selected_mmhb:
+                selected_models_mmhb = st.multiselect('Select models to compare', options = mmhb_filtered['model_name'].unique(), key='mmhb')
 
             st.write(mmhb_filtered)
-
-            JSONS = []
-            NAMES = []
+            JSONS_mmhb = []
+            NAMES_mmhb = []
             if not mmhb_filtered.empty:    
                 for index, row in mmhb_filtered.iterrows():
                     # Get the model_name and file_name
@@ -201,29 +202,29 @@ def main():
                     file_name = row['file_name']
                     
                     file_path = os.path.join(DATA_PATH, model_name, file_name)
-                    JSONS.append(file_path)
-                    NAMES.append(model_name)
+                    JSONS_mmhb.append(file_path)
+                    NAMES_mmhb.append(model_name)
             else:
                 st.write('No data available for the selected combination.')
 
             # load models data
-            DATA_MODELS = {}
-            for modelname, json_path in zip(NAMES, JSONS):
-                if modelname in selected_models:
+            DATA_MODELS_mmhb = {}
+            for modelname, json_path in zip(NAMES_mmhb, JSONS_mmhb):
+                if modelname in selected_models_mmhb:
                     data = load_data(json_path)
 
                     chrf_masculine = data.get('chrfs_both,none', -1000)
                     chrf_feminine = data.get('chrfs_feminine,none', -1000)
                     chrfs_both = data.get('chrfs_both,none', -1000)
 
-                    DATA_MODELS[modelname] = {  
+                    DATA_MODELS_mmhb[modelname] = {  
                                                 # metrics
                                                 'chrf_masculine':chrf_masculine, 
                                                 'chrf_feminine': chrf_feminine,
                                                 'chrfs_both': chrfs_both
                                             }
 
-            if DATA_MODELS:
+            if DATA_MODELS_mmhb:
                 st.divider()
 
                 # List of available metrics
@@ -231,9 +232,9 @@ def main():
 
                 # Precompute the best metrics
                 best_metrics = {
-                    "chrf_masculine": max(data_model['chrf_masculine'] for data_model in DATA_MODELS.values()),
-                    "chrf_feminine": max(data_model['chrf_feminine'] for data_model in DATA_MODELS.values()),
-                    "chrfs_both": max(data_model['chrfs_both'] for data_model in DATA_MODELS.values()),
+                    "chrf_masculine": max(data_model['chrf_masculine'] for data_model in DATA_MODELS_mmhb.values()),
+                    "chrf_feminine": max(data_model['chrf_feminine'] for data_model in DATA_MODELS_mmhb.values()),
+                    "chrfs_both": max(data_model['chrfs_both'] for data_model in DATA_MODELS_mmhb.values()),
                 }
 
 
@@ -246,7 +247,7 @@ def main():
 
                 st.divider()
                 # Loop through each model and display the selected metrics
-                for modelname, data_model in DATA_MODELS.items():
+                for modelname, data_model in DATA_MODELS_mmhb.items():
                     st.markdown(f'###### **{modelname}**')
                     cols = st.columns(max(len(selected_metrics), 1))
                     
