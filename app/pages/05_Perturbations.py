@@ -112,7 +112,7 @@ def main():
             # Layout adjustments
             fig.update_layout(
                 title=f"{plot_type.capitalize()} ({metrics_selected.upper()})",
-                xaxis_title="Index",
+                xaxis_title="Noise",
                 yaxis_title=f"{metrics_selected.upper()} Score",
                 legend_title="Model",
                 template="plotly_white"
