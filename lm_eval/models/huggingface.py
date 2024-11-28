@@ -1272,6 +1272,8 @@ class HFLM(TemplateLM):
                 # max len for inputs = encoder's whole max_length
                 max_ctx_len = self.max_length
 
+            #eval_logger.warning(contexts)
+
             # encode, pad, and truncate contexts for this batch
             context_enc, attn_masks = self.tok_batch_encode(
                 contexts,

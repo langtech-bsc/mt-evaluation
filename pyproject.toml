@@ -39,7 +39,6 @@ dependencies = [
     "dill",
     "word2number",
     "more_itertools",
-    "fairseq>=0.12.2",
     "ctranslate2>=4.3.1",
     "streamlit>=1.37.1",
     "unbabel-comet>=2.2.2",

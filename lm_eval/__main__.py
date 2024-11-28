@@ -257,6 +257,15 @@ def setup_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Sets trust_remote_code to True to execute code to create HF Datasets from the Hub",
     )
+    parser.add_argument(
+        "--translation_kwargs",
+        type=str,
+        default=None,
+        help=(
+            "String arguments for translation prompt formatting for MT tasks,"
+            " e.g. `src_language==cat_Latn,tgt_language=eng_Latn,prompt_style=nllb`."
+        ),
+    )
     return parser
 
 
@@ -397,6 +406,7 @@ def cli_evaluate(args: Union[argparse.Namespace, None] = None) -> None:
         apply_chat_template=args.apply_chat_template,
         fewshot_as_multiturn=args.fewshot_as_multiturn,
         gen_kwargs=args.gen_kwargs,
+        mt_kwargs=args.translation_kwargs,
         task_manager=task_manager,
         verbosity=args.verbosity,
         predict_only=args.predict_only,

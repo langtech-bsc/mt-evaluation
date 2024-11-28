@@ -10,10 +10,32 @@ import sacrebleu
 import random
 import yaml
 
+from lm_eval.caching.cache import load_from_cache, save_to_cache
+from tqdm import tqdm
+from lm_eval.prompts.mappings import *
+
+from collections.abc import Callable
+import logging
+
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Literal,
+    Mapping,
+    Optional,
+    Tuple,
+    Union,
+)
+
 METRICS_MT = [  "bleu", "ter", "chrf", "comet", "comet_kiwi", "bleurt", 
                 "xcomet", "xcomet_qe", "bleu_segments", "ter_segments", "chrf_segments", "comet_kiwi_segments", "comet_segments", "xcomet_segments", "xcomet_qe_segments", 
                 "xcomet_error_spans", "xcomet_qe_error_spans", "metricx", "metricx_segments", "metricx_qe", "metricx_qe_segments", 
                 "translations", "targets", "sources"]
+
+eval_logger = logging.getLogger("lm-eval")
 
 class MTask(ConfigurableTask):
 
@@ -421,3 +443,200 @@ class MTask(ConfigurableTask):
     
     def get_target(self):
         return None
+
+    @utils.positional_deprecated
+    def fewshot_context(
+        self,
+        doc: str,
+        num_fewshot: int,
+        system_instruction: Optional[str] = None,
+        apply_chat_template: bool = False,
+        fewshot_as_multiturn: bool = False,
+        chat_template: Optional[Callable] = None,
+        mt_kwargs = None
+    ):
+        """Returns a fewshot context string that is made up of a prepended description
+        (if provided), the `num_fewshot` number of examples, and an appended prompt example.
+        """
+        if mt_kwargs is None:
+            return self.doc_to_text(doc)
+
+        rnd = None
+        if rnd is None:
+            if self.fewshot_rnd is not None:
+                rnd = self.fewshot_rnd
+            else:
+                raise ValueError(
+                    "A `random.Random` generator argument must be provided to `rnd`"
+                )
+
+        if num_fewshot == 0:
+            labeled_examples = ""
+        else:
+            # for sets with no training docs, draw from other set *but ensure no overlap with current doc*
+            if self.has_training_docs():
+                fewshotex = self.fewshot_examples(k=num_fewshot, rnd=rnd)
+            else:
+                if self._fewshot_docs is None:
+                    self._fewshot_docs = list(
+                        self.validation_docs()
+                        if self.has_validation_docs()
+                        else self.test_docs()
+                    )
+
+                fewshotex = rnd.sample(self._fewshot_docs, num_fewshot + 1)
+
+                # get rid of the doc that's the one we're evaluating, if it's in the fewshot
+                fewshotex = [x for x in fewshotex if x != doc][:num_fewshot]
+
+
+            labeled_examples = (
+                "\n\n".join(
+                    [
+                        self.apply_mt_template( self.doc_to_text(doc), mt_kwargs ) + ' ' + self.doc_to_target(doc) for doc in fewshotex
+                    ]
+                )
+                + "\n\n"
+            )
+
+        example = self.apply_mt_template( self.doc_to_text(doc), mt_kwargs )
+        return labeled_examples + example
+
+    def load_yaml_prompts(self):
+        YAML_PATH = './lm_eval/prompts/mt_prompts.yaml'
+        # Load the YAML file
+        with open(YAML_PATH, 'r') as file:
+            self.config_prompts = yaml.safe_load(file)
+
+    def apply_mt_template(self, ctx, mt_kwargs):
+        if mt_kwargs['prompt_style'] not in self.config_prompts['prompt_structures']:
+            raise ValueError(f"Invalid prompt_style '{ mt_kwargs['prompt_style'] }' not found in YAML file.")
+        
+        self.prompt_structure = self.config_prompts['prompt_structures'][ mt_kwargs['prompt_style'] ]
+        prompt_template = self.prompt_structure['prompt']
+
+        if self.prompt_structure['language_map']:
+            language_map = globals()[self.prompt_structure['mapping_type']]
+            src = language_map[ mt_kwargs['src_language'] ]
+            tgt = language_map[ mt_kwargs['tgt_language'] ]
+        else:
+            src = mt_kwargs['src_language']
+            tgt = mt_kwargs['tgt_language']
+
+        prompt = prompt_template.format(src=src, tgt=tgt, context=ctx)
+        return prompt
+
+    def build_all_requests(
+        self,
+        *,
+        limit: Union[int, None] = None,
+        rank: int = 0,
+        world_size: int = 1,
+        cache_requests: bool = False,
+        rewrite_requests_cache: bool = False,
+        system_instruction: Optional[str] = None,
+        apply_chat_template: bool = False,
+        fewshot_as_multiturn: bool = False,
+        chat_template: Optional[Callable] = None,
+        tokenizer_name: str = "",
+        mt_kwargs = None
+    ) -> None:
+        """Build a set of Instances for a task, and store them in task.instances"""
+
+        self.load_yaml_prompts()
+
+        # used with caching
+        og_limit = limit
+
+        cache_key = f"requests-{self._config.task}-{self.config.num_fewshot}shot-rank{rank}-world_size{world_size}"
+        cache_key += "-chat_template" if apply_chat_template else ""
+        cache_key += "-fewshot_as_multiturn" if fewshot_as_multiturn else ""
+        cache_key += (
+            f"-system_prompt_hash{utils.hash_string(system_instruction)}"
+            if system_instruction is not None
+            else ""
+        )
+        cache_key += f"-tokenizer{tokenizer_name}"
+
+        cached_instances = load_from_cache(file_name=cache_key)
+
+        if cache_requests and cached_instances and not rewrite_requests_cache:
+            cached_instances = cached_instances[:limit]
+
+            flattened_instances = [
+                instance
+                for instance_group in cached_instances
+                for instance in instance_group
+            ]
+
+            self._instances = flattened_instances
+            return
+
+        eval_logger.info(f"Building contexts for {self.config.task} on rank {rank}...")
+
+        instances = []
+
+        # process all documents when caching is specified for simplicity
+        if (
+            cache_requests
+            and (not cached_instances or rewrite_requests_cache)
+            and limit is not None
+        ):
+            limit = None
+
+        doc_id_docs = list(
+            self.doc_iterator(rank=rank, limit=limit, world_size=world_size)
+        )
+
+        num_docs = len(doc_id_docs)
+
+        for doc_id, doc in tqdm(
+            doc_id_docs,
+            total=num_docs,
+        ):
+
+            doc_copy = doc.copy()
+
+            # sample fewshot context #TODO: need to offset doc_id by rank now!
+            if mt_kwargs is not None:
+                fewshot_ctx = self.fewshot_context(
+                    doc_copy,
+                    0 if self.config.num_fewshot is None else self.config.num_fewshot,
+                    system_instruction,
+                    apply_chat_template,
+                    fewshot_as_multiturn,
+                    chat_template,
+                    mt_kwargs
+                )
+            else:
+                raise ValueError(f"You need to specify translation arguments.")
+
+            # TODO: we should override self.config.repeats if doing greedy gen so users don't waste time+compute
+
+            inst = self.construct_requests(
+                doc=doc_copy,
+                ctx=fewshot_ctx,
+                metadata=(self.config["task"], doc_id, self.config.repeats),
+            )
+
+            if not isinstance(inst, list):
+                inst = [inst]
+
+            instances.append(inst)
+
+        # now flatten, this is to allow slicing to work with pickles
+        sliced_instances = instances[:og_limit]
+
+        flattened_instances = [
+            instance
+            for instance_group in sliced_instances
+            for instance in instance_group
+        ]
+
+        self._instances = flattened_instances
+
+        if len(self._instances) == 0:
+            raise ValueError("task.build_requests() did not find any docs!")
+
+        if cache_requests and (not cached_instances or rewrite_requests_cache):
+            save_to_cache(file_name=cache_key, obj=instances)

@@ -25,8 +25,6 @@ from lm_eval.models import utils
 from accelerate import Accelerator, find_executable_batch_size, DistributedType
 from typing import List, Optional, Union, Tuple
 
-from lm_eval.prompts.mappings import *
-import yaml
 eval_logger = utils.eval_logger
 
 import ast
@@ -56,11 +54,13 @@ def _get_accelerate_args(
     return args
 
 
-@register_model("hf_mt")
-class HF_MT(LM):
+@register_model("nllb")
+class NLLB(LM):
     """
     An abstracted Huggingface model class. Enables usage with both models of
     `transformers.AutoModelForCausalLM` and `transformers.AutoModelForSeq2SeqLM` classes.
+    It is specific for nllb models which require to set src and tgt languages in the
+    tokenizer class
 
     Supports data-parallel multi-GPU with HF Accelerate.
     """
@@ -73,7 +73,6 @@ class HF_MT(LM):
         pretrained: Optional[str] = "gpt2",
         src_language: Optional[str] = "cat_Latn",
         tgt_language: Optional[str] = "eng_Latn",
-        prompt_style: Optional[str] = "default",
         revision: Optional[str] = "main",
         subfolder: Optional[str] = None,
         tokenizer: Optional[str] = None,
@@ -109,23 +108,10 @@ class HF_MT(LM):
         assert isinstance(pretrained, str)
         assert isinstance(src_language, str)
         assert isinstance(tgt_language, str)
-        assert isinstance(prompt_style, str)
         assert isinstance(batch_size, (int, str))
 
         self.src_language = src_language
         self.tgt_language = tgt_language
-        self.prompt_style = prompt_style
-
-        YAML_PATH = './lm_eval/prompts/mt_prompts.yaml'
-        # Load the YAML file
-        with open(YAML_PATH, 'r') as file:
-            config = yaml.safe_load(file)
-
-        # Validate and load the prompt structure
-        if self.prompt_style not in config['prompt_structures']:
-            raise ValueError(f"Invalid prompt_style '{self.prompt_style}' not found in YAML file.")
-
-        self.prompt_structure = config['prompt_structures'][self.prompt_style]
 
         gpus = torch.cuda.device_count()
         accelerator = Accelerator()
@@ -277,9 +263,9 @@ class HF_MT(LM):
             use_fast=use_fast_tokenizer,
         )
 
-        if self.prompt_style == 'nllb':
-            self.tokenizer.src_lang = self.src_language
-            self.tokenizer.tgt_lang = self.tgt_language
+        
+        self.tokenizer.src_lang = self.src_language
+        self.tokenizer.tgt_lang = self.tgt_language
 
         self.truncation = truncation
 
@@ -471,55 +457,6 @@ class HF_MT(LM):
 
         return encoding
 
-    def apply_prompt_template(self, ctx):
-        prompt_template = self.prompt_structure['prompt']
-        
-        if self.prompt_structure['language_map']:
-            language_map = globals()[self.prompt_structure['mapping_type']]
-            src = language_map[self.src_language]
-            tgt = language_map[self.tgt_language]
-        else:
-            src = self.src_language
-            tgt = self.tgt_language
-
-        prompt = prompt_template.format(src=src, tgt=tgt, context=ctx)
-        return prompt
-
-
-    def process_fewshots(self, few_shot_example):
-        separator     = '[SEP_FEWSHOT]'
-        endofsentence = '[EOS_FEWSHOT]'
-        fewshots = few_shot_example.split(endofsentence)
-        modified_fewshots = []
-
-        for fewshot in fewshots:
-            if separator in fewshot:
-                src_sentence, tgt_sentence = fewshot.split(separator, 1)
-                modified_fewshots.append(f'{self.apply_prompt_template(src_sentence)} {tgt_sentence}\n\n')
-            else:
-                modified_fewshots.append(fewshot)  # In case there's no [SEP] in the chunk.
-
-        return ''.join(modified_fewshots)
-
-    def apply_prompt_template_strings(self, strings):
-
-        endoffewshots = '[END_FEWSHOT]'
-
-        test_string = strings[0]
-        if endoffewshots in test_string:
-            strings_updated = []
-            for s in strings:
-                
-                few_shot_example, example = s.split(endoffewshots)
-                modified_fewshots = self.process_fewshots(few_shot_example)
-                strings_updated.append(modified_fewshots + self.apply_prompt_template(example) )
-        
-        else:
-            strings_updated = [self.apply_prompt_template(s) for s in strings]
-
-        return strings_updated
-
-
     def tok_batch_encode(
         self,
         strings: List[str],
@@ -528,11 +465,6 @@ class HF_MT(LM):
         truncation: bool = False,
     ) -> Tuple[List[int], List[int]]:
         # encode a batch of strings. converts to tensors and pads automatically, unlike tok_encode.
-
-        # add prompts to strings
-        #eval_logger.info(strings[0])
-        strings = self.apply_prompt_template_strings(strings) #[self.apply_prompt_template(s) for s in strings]
-        #eval_logger.info(strings[0])
 
         old_padding_side = self.tokenizer.padding_side
         self.tokenizer.padding_side = padding_side
@@ -603,27 +535,19 @@ class HF_MT(LM):
         
         #eval_logger.info(generation_kwargs)
 
-        if self.prompt_style == 'nllb':
-            return self.model.generate(
-                    input_ids=context,
-                    attention_mask=attention_mask,
-                    forced_bos_token_id=self.tokenizer.convert_tokens_to_ids(self.tgt_language),
-                    max_length=max_length,
-                    stopping_criteria=stopping_criteria,
-                    #pad_token_id=self.eot_token_id,
-                    early_stopping=True,
-                    **generation_kwargs,
-                )
-
+        
         return self.model.generate(
-            input_ids=context,
-            attention_mask=attention_mask,
-            max_length=max_length,
-            stopping_criteria=stopping_criteria,
-            #pad_token_id=self.eot_token_id,
-            early_stopping=True,
-            **generation_kwargs,
-        )
+                input_ids=context,
+                attention_mask=attention_mask,
+                forced_bos_token_id=self.tokenizer.convert_tokens_to_ids(self.tgt_language),
+                max_length=max_length,
+                stopping_criteria=stopping_criteria,
+                #pad_token_id=self.eot_token_id,
+                early_stopping=True,
+                **generation_kwargs,
+            )
+
+        
 
         #return response
 

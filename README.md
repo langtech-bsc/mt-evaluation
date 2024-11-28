@@ -1,4 +1,4 @@
-# Machine Translation Evaluation Framework
+# MT-Lens
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10256836.svg)](https://doi.org/10.5281/zenodo.10256836)
 
@@ -6,7 +6,7 @@
 
 ## About this lm-evaluation-harness fork
 
-This fork of the EleutherAI's [lm-evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness) aims to be used as the evaluation framework for machine translation-related tasks. This fork is maintained by the Language Technologies Unit within the Barcelona Supercomputing Center (BSC).
+MT-lens is a fork of the EleutherAI's [lm-evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness) that aims to be used as an evaluation framework for machine translation-related tasks. This fork is maintained by the Language Technologies Unit within the Barcelona Supercomputing Center (BSC).
 
 
 ## Contents
@@ -42,7 +42,7 @@ pip install -e .
 
 ### Supported models
 
-Currently, MT tasks support `fairseq`, `CTranslate2` and `transformers` models. For non-MT tasks, the rest of models supported by the Eleuther-AI Evaluation-Harness are available. Namely; `openai-completions`, `local-completions`, `openai-chat-completions`, `local-chat-completions`, `anthropic`, `anthropic-chat`, `anthropic-chat-completions`, `textsynth`, `gguf`, `ggml`, `vllm`, `mamba_ssm`, `openvino`, `neuronx`, `deepsparse`, `sparseml`, `local-completions` or `local-chat-completions`, `nemo`.
+Currently, MT tasks support `fairseq`, `CTranslate2`, `transformers`, `openai-completions`, `local-completions`, `openai-chat-completions`, `local-chat-completions`, `anthropic`, `anthropic-chat`, `anthropic-chat-completions`, `textsynth`, `gguf`, `ggml`, `vllm`, `mamba_ssm`, `openvino`, `neuronx`, `deepsparse`, `sparseml`, `local-completions`, `local-chat-completions`, `nemo` and `nllb`.
 
 If your desired model is not directly supported by our framework, you can still evaluate it by using the `simplegenerator` wrapper, which accepts a text file containing generated translations.
 
@@ -59,11 +59,13 @@ lm_eval --model ctranslate \
     --tasks en_ca_flores_devtest \
     --output_path $output_dir \
     --write_out \
-    --verbosity 'INFO' \
     --gen_kwargs 'num_beams=8,length_penalty=1,no_repeat_ngram_size=0,max_length=250'
 ```
 
 #### Fairseq
+
+> [!NOTE]  
+> If you want to use `fairseq` models, make sure **fairseq** is installed in your venv.
 
 Bilingual `fairseq` models are implemented using `CTranslate2` library. A fairseq model checkpoint will be converted to a CTranslate2 model using `ct2-fairseq-converter` and will be saved in a folder named as *ctranslate_models*. You can evaluate a `fairseq` bilingual model on *flores dev* using the following command:
 
@@ -89,33 +91,6 @@ In this command:
 - `data_dir` points to the directory containing the data binary files used during model training.
 - `spm_path` refers to the directory containing the SentencePiece model file, specifically named *spm.model*. 
 
-#### HuggingFace transformers
-
-For models loaded via the HuggingFace transformers library, any arguments provided through --model_args are passed directly to the corresponding constructor, enabling the same functionalities available with AutoModel. Additionally, there are three specific arguments required for MT tasks:
-
-- `prompt_style`: Defines the template style used to format the source sentence, and it must be specified in the ./lm_eval/prompts/mt_prompts.yaml file.
-- `src_language`: Specifies the name of the source language for formatting the template.
-- `tgt_language`: Specifies the name of the target language for formatting the template.
-
-When the `prompt_style` is set to 'nllb', the `src_language` and `tgt_language` arguments are used to add the respective language tags in the tokenizer. In this case, NLLB language tags should be represented as a BCP-47 tag sequence, where the base subtag is a three-letter ISO 639-3 code, followed by ISO 15924 script subtags.
-
-```bash
-model='./models/nllb600_hf/'
-src_language='eng_Latn'
-tgt_language='cat_Latn'
-prompt_style='nllb'
-output_dir='results/nllb600_hf/results_en_ca_flores_devtest.json'
-
-lm_eval --model hf_mt \
-        --model_args "pretrained=${model},src_language=${src_language},tgt_language=${tgt_language},prompt_style=${prompt_style},trust_remote_code=True,dtype=bfloat16" \
-        --tasks en_ca_flores_devtest \
-        --num_fewshot 0 \
-        --batch_size 6 \
-        --output_path $output_dir \
-        --write_out \
-        --verbosity 'INFO'
-```
-
 #### Simplegenerator
 
 If your desired model is not natively supported by the framework, you can still evaluate it using the `simplegenerator` wrapper. This approach allows you to input a file containing generated translations, simplifying the evaluation process for custom or unsupported models.
@@ -135,7 +110,81 @@ lm_eval --model simplegenerator \
     --verbosity 'INFO' \
 ```
 
+#### HuggingFace transformers
+
+For models loaded via the HuggingFace transformers library, any arguments provided through --model_args are passed directly to the corresponding constructor, enabling the same functionalities available with AutoModel. Additionally, there are three specific arguments required for MT tasks:
+
+- `prompt_style`: Defines the template style used to format the source sentence, and it must be specified in the ./lm_eval/prompts/mt_prompts.yaml file.
+- `src_language`: Specifies the name of the source language for formatting the template.
+- `tgt_language`: Specifies the name of the target language for formatting the template.
+
+When the `prompt_style` is set to 'madlad400', the `src_language` and `tgt_language` arguments are used to add the respective language tags in the tokenizer. In this case, madlad400 language tags should be represented as a BCP-47 tag sequence, where the base subtag is a three-letter ISO 639-3 code, followed by ISO 15924 script subtags.
+
+```bash
+model='./models/madlad400/'
+src_language='eng_Latn'
+tgt_language='cat_Latn'
+prompt_style='madlad400'
+output_dir='results/madlad400/results_en_ca_flores_devtest.json'
+
+lm_eval --model hf \
+        --model_args "pretrained=${model},trust_remote_code=True,dtype=bfloat16" \
+        --tasks en_ca_flores_devtest \
+        --num_fewshot 0 \
+        --batch_size 6 \
+        --output_path $output_dir \
+        --write_out \
+        --translation_kwargs "src_language=${src_language},tgt_language=${tgt_language},prompt_style=${prompt_style}"
+```
+<details><summary>Special case for nllb models</summary>
+
+For nllb models [Link HF](https://huggingface.co/docs/transformers/model_doc/nllb) hosted in HuggingFace, the tokenizer must know in advance the source and target languages. We implement these models as a different model implementation called `nllb`. For example, to evaluate a nllb600M from HG for the flores devtest task, you can use the following command:
+
+```bash
+model='./models/nllb600M/'
+src_language='eng_Latn'
+tgt_language='cat_Latn'
+prompt_style='nllb'
+output_dir='results/nllb/results_en_ca_flores_devtest.json'
+
+lm_eval --model nllb \
+        --model_args "pretrained=${model},src_language=${src_language},tgt_language=${tgt_language},trust_remote_code=True,dtype=bfloat16" \
+        --tasks en_ca_flores_devtest \
+        --num_fewshot 0 \
+        --batch_size 6 \
+        --output_path $output_dir \
+        --write_out \
+        --translation_kwargs "src_language=${src_language},tgt_language=${tgt_language},prompt_style=${prompt_style}"
+```
+</details>
+
+#### Others
+
+Other model implementations can be used; however, it is important to ensure that the `translation_kwargs` argument is always configured for MT tasks. For instance,for running a MT task using `vllm`, you can use the following command:
+
+
+```bash
+model='./models/vllm_model/'
+GPUs_per_model=1
+model_replicas=1
+src_language='eng_Latn'
+tgt_language='cat_Latn'
+prompt_style='vllm_prompt'
+output_dir='results/vllm_model/results_en_ca_flores_devtest.json'
+
+lm_eval --model vllm \
+    --model_args pretrained={model},tensor_parallel_size={GPUs_per_model},dtype=auto,gpu_memory_utilization=0.8,data_parallel_size={model_replicas} \
+    --tasks en_ca_flores_devtest \
+    --batch_size auto \
+    --write_out \
+    --translation_kwargs "src_language=${src_language},tgt_language=${tgt_language},prompt_style=${prompt_style}"
+```
+
 ### Tasks
+
+> [!NOTE]  
+> Note that other tasks supported by the Evaluation-Harness are natively supported by MT-Lens.
+
 
 | Task                   |     Datasets    |    Metrics  |
 | ---------------------- | ------------------ | ------------------ |
@@ -143,6 +192,7 @@ lm_eval --model simplegenerator \
 | Added Toxicity    | HolisticBias | ETOX, muTOX, comet-kiwi |
 | Gender Bias-MT    | Must-SHE | Accuracy, bleu, chrf, ter, bleurt, comet, comet-kiwi, metricx, metricx-qe |
 | Gender Bias-MT    | Massive Multilingual HolisticBias (MMHB) | chrf-masculine, chrf-feminine, chrf-both |
+|  Robustness to Character Noise    | Flores-devtest | bleu, ter, comet |
 
 
 #### General-MT
@@ -177,20 +227,21 @@ where {src} and {tgt} have to be replaced with the corresponding code of the sou
 For running a MT task using a `hf` model, you can do it as follows:
 
 ```bash
-model='./models/nllb600_hf/'
+model='./models/madlad400/'
 src_language='eng_Latn'
 tgt_language='spa_Latn'
-prompt_style='nllb'
-output_dir='results/nllb600_hf/results_en_es_flores_dev.json'
+prompt_style='madlad400'
+output_dir='results/madlad400/results_en_es_flores_dev.json'
 
-lm_eval --model hf_mt \
-        --model_args "pretrained=${model},src_language=${src_language},tgt_language=${tgt_language},prompt_style=${prompt_style},trust_remote_code=True,dtype=bfloat16" \
+lm_eval --model hf \
+        --model_args "pretrained=${model},trust_remote_code=True,dtype=bfloat16" \
         --tasks en_es_flores_dev \
         --num_fewshot 0 \
         --batch_size 6 \
         --output_path $output_dir \
         --write_out \
-        --verbosity 'INFO'
+        --translation_kwargs "src_language=${src_language},tgt_language=${tgt_language},prompt_style=${prompt_style}"
+        
 ```
 
 This will generate a JSON file in `$output_dir` that includes the source text, reference translations, generated translations, and the computed metrics.
@@ -231,21 +282,23 @@ where {tgt} has to be replaced with the two-letters ISO639 code of the target la
 <details><summary>Click to show command</summary>
 
 ```bash
-model='./models/nllb600_hf/'
+model='./models/madlad400/'
 src_language='eng_Latn'
 tgt_language='spa_Latn'
-prompt_style='nllb'
-output_dir='results/nllb600_hf/results_en_es_age_hb.json'
+prompt_style='madlad400'
+output_dir='results/madlad400/results_en_es_age_hb.json'
 
-lm_eval --model hf_mt \
-        --model_args "pretrained=${model},src_language=${src_language},tgt_language=${tgt_language},prompt_style=${prompt_style},trust_remote_code=True,dtype=bfloat16" \
+lm_eval --model hf \
+        --model_args "pretrained=${model},trust_remote_code=True,dtype=bfloat16" \
         --tasks en_es_age_hb \
         --num_fewshot 0 \
         --batch_size 6 \
         --output_path $output_dir \
         --write_out \
-        --verbosity 'INFO'
+        --translation_kwargs "src_language=${src_language},tgt_language=${tgt_language},prompt_style=${prompt_style}"
+        
 ```
+
 </details>
 
 <br>
@@ -286,20 +339,20 @@ Then, for running the evaluation using a `hf` model, you will use the following 
 <details><summary>Click to show command</summary>
 
 ```bash
-model='./models/nllb600_hf/'
+model='./models/madlad400/'
 src_language='eng_Latn'
 tgt_language='spa_Latn'
-prompt_style='nllb'
-output_dir='results/nllb600_hf/results_en_es_must_she.json'
+prompt_style='madlad400'
+output_dir='results/madlad400/results_en_es_must_she.json'
 
-lm_eval --model hf_mt \
-        --model_args "pretrained=${model},src_language=${src_language},tgt_language=${tgt_language},prompt_style=${prompt_style},trust_remote_code=True,dtype=bfloat16" \
+lm_eval --model hf \
+        --model_args "pretrained=${model},trust_remote_code=True,dtype=bfloat16" \
         --tasks en_es_must_she \
         --num_fewshot 0 \
         --batch_size 6 \
         --output_path $output_dir \
         --write_out \
-        --verbosity 'INFO'
+        --translation_kwargs "src_language=${src_language},tgt_language=${tgt_language},prompt_style=${prompt_style}"
 ```
 </details>
 
@@ -339,20 +392,20 @@ Then, for running the evaluation using a `hf` model, you will use the following 
 <details><summary>Click to show command</summary>
 
 ```bash
-model='./models/nllb600_hf/'
+model='./models/madlad400/'
 src_language='eng_Latn'
 tgt_language='spa_Latn'
-prompt_style='nllb'
-output_dir='results/nllb600_hf/results_en_es_mmhb_dev.json'
+prompt_style='madlad400'
+output_dir='results/madlad400/results_en_es_mmhb_dev.json'
 
-lm_eval --model hf_mt \
-        --model_args "pretrained=${model},src_language=${src_language},tgt_language=${tgt_language},prompt_style=${prompt_style},trust_remote_code=True,dtype=bfloat16" \
+lm_eval --model hf \
+        --model_args "pretrained=${model},trust_remote_code=True,dtype=bfloat16" \
         --tasks en_es_mmhb_dev \
         --num_fewshot 0 \
         --batch_size 6 \
         --output_path $output_dir \
         --write_out \
-        --verbosity 'INFO'
+        --translation_kwargs "src_language=${src_language},tgt_language=${tgt_language},prompt_style=${prompt_style}"
 ```
 </details>
 
@@ -384,6 +437,38 @@ This will generate a JSON file in `$output_dir` containing the following fields:
 - `references-masculine`: A list of reference sentences with masculine gender.
 - `translations-masculine`: The corresponding translations of masculine source sentences.
 - `chf-segments-masculine`: Sentence level chrF scores for each translation.
+
+#### Robustness to Character Noise
+
+This task evaluates how introducing word-level synthetic errors into source sentences affects the translation quality of an NMT model. We utilize the Flores-devtest dataset, which allows us to evaluate the model's robustness to character perturbations across a wide range of directions. We implement three types of synthetic noise:
+
+- `swap`: For a selected word, two adjacent characters are swapped.
+
+- `chardupe`: A character in the selected word is duplicated. 
+
+- `chardrop`: A character is deleted from the selected word.
+
+A noise level parameter between 0 and 1, controls the proportion of words in each sentence subjected to perturbations. Then, we evaluate the translation quality for each noise level using overlap and neural reference based metrics.
+
+To run this task using a `hf` model, you can do it as follows:
+
+```bash
+model='./models/madlad400/'
+src_language='eng_Latn'
+tgt_language='spa_Latn'
+prompt_style='madlad400'
+output_dir='results/madlad400/results_en_es_perturbations.json'
+
+lm_eval --model hf \
+        --model_args "pretrained=${model},trust_remote_code=True,dtype=bfloat16" \
+        --tasks en_es_perturbations \
+        --num_fewshot 0 \
+        --batch_size 6 \
+        --output_path $output_dir \
+        --write_out \
+        --translation_kwargs "src_language=${src_language},tgt_language=${tgt_language},prompt_style=${prompt_style}"
+```
+
 
 ### Prompt Definition
 
@@ -526,6 +611,7 @@ muTOX [(Costa-jussà et al., 2023)](https://arxiv.org/pdf/2401.05060) is a toxic
 
 ### Adding new MT-datasets
 
+Coming soon.
 
 ### Visual Interface
 
@@ -542,17 +628,25 @@ This framework provides a user-friendly interface designed for seamless explorat
 
 To start the Streamlit app and access the visual interface, follow these steps:
 
-1. Open your terminal and navigate to the app directory:
+1. First, update the `results_summary.csv` file which will be used by the app to show the results.
+
+  ```
+  python results_summary/results_mt.py
+  ```
+
+  This will create a file named `results_summary.csv` inside *results_summary* folder.
+
+2. Open your terminal and navigate to the app directory:
     ```bash
     cd app
     ```
 
-2. Run the following command to start the app:
+3. Run the following command to start the app:
     ```bash
     streamlit run 01_Overview.py
     ```
 
-3. Once the Streamlit server starts, access the interface by going to [http://localhost:8501](http://localhost:8501) in your browser.
+4. Once the Streamlit server starts, access the interface by going to [http://localhost:8501](http://localhost:8501) in your browser.
 
 
 ## Citation
