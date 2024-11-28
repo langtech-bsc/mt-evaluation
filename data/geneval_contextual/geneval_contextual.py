@@ -14,14 +14,20 @@ _HOMEPAGE = ""
 
 _LICENSE = ""
 
-_URL = "geneval"  # Replace with the actual path or URL to your data
+_URL = "geneval_contextual"  # Replace with the actual path or URL to your data
 
-_SPLITS = ["en_es"]
+_SPLITS = ["en_ar","en_de", "en_es", "en_fr", "en_hi", "en_it", "en_pt", "en_ru"]
 
 _TSV_FILES = {
-    "en-es": os.path.join("geneval_dataset", "geneval_en-es.tsv"),
+    "en_ar": os.path.join("geneval_contextual_dataset", "geneval_contextual_en_ar.tsv"),
+    "en_de": os.path.join("geneval_contextual_dataset", "geneval_contextual_en_de.tsv"),
+    "en_es": os.path.join("geneval_contextual_dataset", "geneval_contextual_en_es.tsv"),
+    "en_fr": os.path.join("geneval_contextual_dataset", "geneval_contextual_en_fr.tsv"),
+    "en_hi": os.path.join("geneval_contextual_dataset", "geneval_contextual_en_hi.tsv"),
+    "en_it": os.path.join("geneval_contextual_dataset", "geneval_contextual_en_it.tsv"),
+    "en_pt": os.path.join("geneval_contextual_dataset", "geneval_contextual_en_pt.tsv"),
+    "en_ru": os.path.join("geneval_contextual_dataset", "geneval_contextual_en_ru.tsv"),
 }
-
 
 class GenderBiasEvaluation(datasets.GeneratorBasedBuilder):
     """Gender-Bias Evaluation Dataset"""
@@ -32,8 +38,7 @@ class GenderBiasEvaluation(datasets.GeneratorBasedBuilder):
         features = datasets.Features({
             "SRC": datasets.Value("string"),
             "REF": datasets.Value("string"),
-            "WRONG-REF": datasets.Value("string"),
-            "GENDER": datasets.Value("string")
+            "WRONG-REF": datasets.Value("string")
         })
         return datasets.DatasetInfo(
             description=_DESCRIPTION,

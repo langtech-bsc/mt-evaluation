@@ -22,7 +22,8 @@ from .multilingual_holistic_bias.task import *
 from .flores_plus_dev.task import *
 from .flores_plus_devtest.task import *
 from .perturbations.task import *
-from .geneval.task import *
+from .geneval_single.task import *
+from .geneval_contextual.task import *
 
 GROUP_ONLY_KEYS = list(GroupConfig().to_dict().keys())
 
