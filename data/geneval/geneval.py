@@ -19,7 +19,7 @@ _URL = "geneval"  # Replace with the actual path or URL to your data
 _SPLITS = ["en_es"]
 
 _TSV_FILES = {
-    "en-es": os.path.join("geneval_dataset", "geneval_en-es.tsv"),
+    "en_es": os.path.join("geneval_dataset", "geneval_en_es.tsv"),
 }
 
 
@@ -33,7 +33,8 @@ class GenderBiasEvaluation(datasets.GeneratorBasedBuilder):
             "SRC": datasets.Value("string"),
             "REF": datasets.Value("string"),
             "WRONG-REF": datasets.Value("string"),
-            "GENDER": datasets.Value("string")
+            "GENDER": datasets.Value("string"),
+            "ID": datasets.Value("string")
         })
         return datasets.DatasetInfo(
             description=_DESCRIPTION,
