@@ -296,7 +296,6 @@ class Task(abc.ABC):
             data_dir=data_dir,
             cache_dir=cache_dir,
             download_mode=download_mode,
-            trust_remote_code=True
         )
 
     @property
