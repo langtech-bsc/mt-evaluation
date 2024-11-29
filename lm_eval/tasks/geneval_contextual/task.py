@@ -111,46 +111,65 @@ class GENEVAL_CONTEXTUAL(MTask):
 
 
 @register_task("en_ar_geneval_contextual")
-class GENEVAL_CONTEXTUAL_EN_ES(GENEVAL_CONTEXTUAL):
+class GENEVAL_CONTEXTUAL_EN_AR(GENEVAL_CONTEXTUAL):
     def __init__(self, config=None):
         super().__init__(config={'target_delimiter': '', 'validation_split':'en_ar'})
 
+    def get_target(self):
+        return 'arb_Arab'
+
 @register_task("en_de_geneval_contextual")
-class GENEVAL_CONTEXTUAL_EN_ES(GENEVAL_CONTEXTUAL):
+class GENEVAL_CONTEXTUAL_EN_DE(GENEVAL_CONTEXTUAL):
     def __init__(self, config=None):
         super().__init__(config={'target_delimiter': '', 'validation_split':'en_de'})
+
+    def get_target(self):
+        return 'deu_Latn'
 
 @register_task("en_es_geneval_contextual")
 class GENEVAL_CONTEXTUAL_EN_ES(GENEVAL_CONTEXTUAL):
     def __init__(self, config=None):
         super().__init__(config={'target_delimiter': '', 'validation_split':'en_es'})
 
+    def get_target(self):
+        return 'spa_Latn'    
+
 @register_task("en_fr_geneval_contextual")
-class GENEVAL_CONTEXTUAL_EN_ES(GENEVAL_CONTEXTUAL):
+class GENEVAL_CONTEXTUAL_EN_FR(GENEVAL_CONTEXTUAL):
     def __init__(self, config=None):
         super().__init__(config={'target_delimiter': '', 'validation_split':'en_fr'})
 
+    def get_target(self):
+        return 'fra_Latn'
+
 @register_task("en_hi_geneval_contextual")
-class GENEVAL_CONTEXTUAL_EN_ES(GENEVAL_CONTEXTUAL):
+class GENEVAL_CONTEXTUAL_EN_HI(GENEVAL_CONTEXTUAL):
     def __init__(self, config=None):
         super().__init__(config={'target_delimiter': '', 'validation_split':'en_hi'})
 
+    def get_target(self):
+        return 'hin_Deva'
+
 @register_task("en_it_geneval_contextual")
-class GENEVAL_CONTEXTUAL_EN_ES(GENEVAL_CONTEXTUAL):
+class GENEVAL_CONTEXTUAL_EN_IT(GENEVAL_CONTEXTUAL):
     def __init__(self, config=None):
         super().__init__(config={'target_delimiter': '', 'validation_split':'en_it'})
 
-@register_task("en_nl_geneval_contextual")
-class GENEVAL_CONTEXTUAL_EN_ES(GENEVAL_CONTEXTUAL):
-    def __init__(self, config=None):
-        super().__init__(config={'target_delimiter': '', 'validation_split':'en_nl'})
+    def get_target(self):
+        return 'ita_Latn'
 
 @register_task("en_pt_geneval_contextual")
-class GENEVAL_CONTEXTUAL_EN_ES(GENEVAL_CONTEXTUAL):
+class GENEVAL_CONTEXTUAL_EN_PT(GENEVAL_CONTEXTUAL):
     def __init__(self, config=None):
         super().__init__(config={'target_delimiter': '', 'validation_split':'en_pt'})
 
+    def get_target(self):
+        return 'por_Latn'
+
 @register_task("en_ru_geneval_contextual")
-class GENEVAL_CONTEXTUAL_EN_ES(GENEVAL_CONTEXTUAL):
+class GENEVAL_CONTEXTUAL_EN_RU(GENEVAL_CONTEXTUAL):
     def __init__(self, config=None):
         super().__init__(config={'target_delimiter': '', 'validation_split':'en_ru'})
+
+    def get_target(self):
+        return 'rus_Cyrl'
