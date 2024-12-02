@@ -7,5 +7,7 @@ dataset_paths = {
         "flores+_dev":"data/flores+_dev/flores+_dev.py",
         "flores+_devtest":"data/flores+_devtest/flores+_devtest.py",
         "multilingual_holistic_bias": "data/multilingual_holistic_bias/multilingual_holistic_bias.py",
-        "flores+_devtest_perturbations":"data/flores+_devtest_perturbations/flores+_devtest_perturbations.py"
+        "flores+_devtest_perturbations":"data/flores+_devtest_perturbations/flores+_devtest_perturbations.py",
+        "geneval_single":"data/geneval_single/geneval_single.py",
+        "geneval_contextual":"data/geneval_contextual/geneval_contextual.py"
 }
