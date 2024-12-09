@@ -214,8 +214,9 @@ lm_eval --model vllm \
 | Added Toxicity    | HolisticBias | ETOX, muTOX, comet-kiwi |
 | Gender Bias-MT    | Must-SHE | Accuracy, bleu, chrf, ter, bleurt, comet, comet-kiwi, metricx, metricx-qe |
 | Gender Bias-MT    | Massive Multilingual HolisticBias (MMHB) | chrf-masculine, chrf-feminine, chrf-both |
+| Gender Bias-MT    | MT GenEval Single Sentence | Accuracy, bleu, chrf, ter, bleurt, comet, comet-kiwi, metricx, metricx-qe |
+| Gender Bias-MT    | MT GenEval Contextual | Accuracy, bleu, chrf, ter, bleurt, comet, comet-kiwi, metricx, metricx-qe |
 |  Robustness to Character Noise    | Flores-devtest | bleu, ter, comet |
-
 
 #### General-MT
 
@@ -460,6 +461,106 @@ This will generate a JSON file in `$output_dir` containing the following fields:
 - `translations-masculine`: The corresponding translations of masculine source sentences.
 - `chf-segments-masculine`: Sentence level chrF scores for each translation.
 
+
+##### MT GenEval Single Sentence
+
+
+To run MT GenEval Single Sentence, you can use the following task names, which allow you to specify the language direction to use:
+
+<details><summary>Click to show table</summary>
+
+| Pair                   |     Task name    |
+| ---------------------- | ------------------ |
+| English - Arabic        | en_ar_geneval_single |
+| English - German        | en_de_geneval_single |
+| English - Spanish       | en_es_geneval_single |
+| English - French        | en_fr_geneval_single |
+| English - Hindi         | en_hi_geneval_single |
+| English - Italian       | en_it_geneval_single |
+| English - Portuguese    | en_pt_geneval_single |
+| English - Russian       | en_ru_geneval_single |
+
+</details>
+
+<br>
+
+Then, for running the evaluation using a `hf` model, you will use the following command:
+
+<details><summary>Click to show command</summary>
+
+```bash
+model='./models/nllb600_hf/'
+src_language='eng_Latn'
+tgt_language='spa_Latn'
+prompt_style='nllb'
+output_dir='results/nllb600_hf/results_en_es_geneval_single.json'
+
+lm_eval --model hf_mt \
+        --model_args "pretrained=${model},src_language=${src_language},tgt_language=${tgt_language},prompt_style=${prompt_style},trust_remote_code=True,dtype=bfloat16" \
+        --tasks en_es_geneval_single \
+        --num_fewshot 0 \
+        --batch_size 6 \
+        --output_path $output_dir \
+        --write_out \
+        --verbosity 'INFO'
+```
+</details>
+
+<br>
+
+This will generate a JSON file in `$output_dir` containing the same metrics as a General-MT as well as the following field:
+
+- `geneval_scores`
+
+##### MT GenEval Contextual
+
+To run MT GenEval Contextual, you can use the following task names, which allow you to specify the language direction to use:
+
+<details><summary>Click to show table</summary>
+
+| Pair                   |     Task name    |
+| ---------------------- | ------------------ |
+| English - Arabic        | en_ar_geneval_contextual |
+| English - German        | en_de_geneval_contextual |
+| English - Spanish       | en_es_geneval_contextual |
+| English - French        | en_fr_geneval_contextual |
+| English - Hindi         | en_hi_geneval_contextual |
+| English - Italian       | en_it_geneval_contextual |
+| English - Portuguese    | en_pt_geneval_contextual |
+| English - Russian       | en_ru_geneval_contextual |
+
+</details>
+
+<br>
+
+Then, for running the evaluation using a `hf` model, you will use the following command:
+
+<details><summary>Click to show command</summary>
+
+```bash
+model='./models/nllb600_hf/'
+src_language='eng_Latn'
+tgt_language='spa_Latn'
+prompt_style='nllb'
+output_dir='results/nllb600_hf/results_en_es_geneval_contextual.json'
+
+lm_eval --model hf_mt \
+        --model_args "pretrained=${model},src_language=${src_language},tgt_language=${tgt_language},prompt_style=${prompt_style},trust_remote_code=True,dtype=bfloat16" \
+        --tasks en_es_geneval_contextual \
+        --num_fewshot 0 \
+        --batch_size 6 \
+        --output_path $output_dir \
+        --write_out \
+        --verbosity 'INFO'
+```
+</details>
+
+<br>
+
+This will generate a JSON file in `$output_dir` containing the same metrics as a General-MT as well as the following field:
+
+- `gender_from_context`
+
 #### Robustness to Character Noise
 
 This task evaluates how introducing word-level synthetic errors into source sentences affects the translation quality of an NMT model. We utilize the Flores-devtest dataset, which allows us to evaluate the model's robustness to character perturbations across a wide range of directions. We implement three types of synthetic noise:
@@ -489,8 +590,6 @@ lm_eval --model hf \
         --output_path $output_dir \
         --write_out \
         --translation_kwargs "src_language=${src_language},tgt_language=${tgt_language},prompt_style=${prompt_style}"
-```
-
 
 ### Prompt Definition
 

@@ -29,9 +29,12 @@ class GENEVAL_CONTEXTUAL(MTask):
         if self.metric_configs is None:
             self.load_yaml_config()
 
-        source = self.doc_to_text(doc)
+        source = self.doc_to_text(doc).split('[[SEP]]')[1]
         target = self.doc_to_target(doc)
-        result = results[0]
+        try:
+            result = results[0].split("[[SEP]]")[1]
+        except:
+            result = results[0]
         row_value = self.get_row_values(doc)
 
         self.create_dicts(source, target, result)
@@ -58,7 +61,7 @@ class GENEVAL_CONTEXTUAL(MTask):
         return  self.accuracy_scores 
 
     def extract_target(self, line):
-        parts = line.split("<sep>")
+        parts = line.split("[[SEP]]")
         return parts[1] if len(parts) > 1 else line
 
     def get_words(self, line):
