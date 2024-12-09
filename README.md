@@ -36,6 +36,28 @@ cd mt-evaluation
 pip install -e .
 ```
 
+### Usage Notes
+
+#### Handling Unbabel Models
+
+When using the `Unbabel/wmt22-cometkiwi-da` or `Unbabel/XCOMET-XL` models, the code will automatically attempt to download them from HuggingFace. However, if no access token is configured, the download will fail, and you will encounter an error. 
+
+To avoid this, you need to first request access to the model from HuggingFace. Once access is granted, you can log in to HuggingFace with your token:
+
+```bash
+huggingface-cli login
+```
+
+Alternatively, you can log in using an environment variable:
+
+```bash
+huggingface-cli login --token $HUGGINGFACE_TOKEN
+```
+
+#### Configuring Models in YAML
+
+If you plan to use these models, ensure that their corresponding entries are set to `compute: True` in the YAML configuration file.
+
 ---
 
 ## Getting started
