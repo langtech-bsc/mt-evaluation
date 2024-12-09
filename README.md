@@ -464,6 +464,7 @@ This will generate a JSON file in `$output_dir` containing the following fields:
 
 ##### MT GenEval Single Sentence
 
+MT-GenEval ([Currey, Anna, et al., 2022](https://arxiv.org/pdf/2211.01355.pdf))is a dataset designed to evaluate gender translation accuracy when translating out of English. The single sentence task evaluates on sentences which contain all necessary gender information. Using human created counter-factual sentences, it allows a controlled comparison of performance across masculine and feminine gendered sentences.
 
 To run MT GenEval Single Sentence, you can use the following task names, which allow you to specify the language direction to use:
 
@@ -513,6 +514,8 @@ This will generate a JSON file in `$output_dir` containing the same metrics as a
 - `geneval_scores`
 
 ##### MT GenEval Contextual
+
+MT-GenEval ([Currey, Anna, et al., 2022](https://arxiv.org/pdf/2211.01355.pdf))is a dataset designed to evaluate gender translation accuracy when translating out of English. The contextual task provides gender information in the sentence(s) preceding the target but evaluates only on the target sentence which is gender neutral in the source. 
 
 To run MT GenEval Contextual, you can use the following task names, which allow you to specify the language direction to use:
 
