@@ -29,7 +29,7 @@ mt_metrics:
     checkpoint: "Unbabel/wmt22-comet-da"
 
   comet_kiwi:
-    compute: True
+    compute: False
     batch_size: 8 
     checkpoint: "Unbabel/wmt22-cometkiwi-da"
 
