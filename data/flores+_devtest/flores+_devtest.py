@@ -52,7 +52,7 @@ _LANGUAGES = ['ace_Arab', 'ceb_Latn', 'heb_Hebr', 'lij_Latn', 'pan_Guru', 'taq_T
  'kmr_Latn', 'nso_Latn', 'sun_Latn', 'zul_Latn', 'bod_Tibt', 'glg_Latn', 'knc_Arab', 'nus_Latn', 'swe_Latn', 
  'bos_Latn', 'gug_Latn', 'knc_Latn', 'nya_Latn', 'swh_Latn', 'bug_Latn', 'guj_Gujr', 'kor_Hang', 'oci_Latn', 
  'szl_Latn', 'bul_Cyrl', 'hat_Latn', 'ktu_Latn', 'ory_Orya', 'tam_Taml', 'cat_Latn', 'hau_Latn', 'lao_Laoo', 
- 'pag_Latn', 'taq_Latn', 'arg_Latn', 'arn_Latn']
+ 'pag_Latn', 'taq_Latn', 'arg_Latn', 'arn_Latn', 'val_Latn']
 
 
 _URL = "flores+_dataset_devtest"

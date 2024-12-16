@@ -15,7 +15,22 @@ prompt_structures:
     mapping_type: ISO639_3_SCRIPT_TO_ISO639_1
 
   salamandra:
-    prompt: "{src} sentence: {context} \n\n  {tgt} sentence:"
+    prompt: "{src} sentence: {context} \n{tgt} sentence:"
+    language_map: True
+    mapping_type: ISO639_3_SCRIPT_TO_NAME_V2
+  
+  salamandraTA:
+    prompt: "[{src}] {context} \n[{tgt}]"
+    language_map: True
+    mapping_type: ISO639_3_SCRIPT_TO_NAME
+
+  salamandraTA7B:
+    prompt: "[{src}] {context} \n[{tgt}]"
+    language_map: True
+    mapping_type: ISO639_3_SCRIPT_TO_SALAMANDRATA7B
+
+  salamandra_instruct:
+    prompt: "<|im_start|>system\n<|im_end|>\n<|im_start|>user\nTranslate the following {src} source text to {tgt}:\n{src}: {context} \n{tgt}: <|im_end|>\n<|im_start|>assistant\n"
     language_map: True
     mapping_type: ISO639_3_SCRIPT_TO_NAME
 
