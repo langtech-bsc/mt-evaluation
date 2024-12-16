@@ -17,7 +17,7 @@ prompt_structures:
   salamandra:
     prompt: "{src} sentence: {context} \n{tgt} sentence:"
     language_map: True
-    mapping_type: ISO639_3_SCRIPT_TO_NAME_V2
+    mapping_type: ISO639_3_SCRIPT_TO_NAME
   
   salamandraTA:
     prompt: "[{src}] {context} \n[{tgt}]"
