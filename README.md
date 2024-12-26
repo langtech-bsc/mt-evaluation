@@ -593,6 +593,7 @@ lm_eval --model hf \
         --output_path $output_dir \
         --write_out \
         --translation_kwargs "src_language=${src_language},tgt_language=${tgt_language},prompt_style=${prompt_style}"
+```
 
 ### Prompt Definition
 
