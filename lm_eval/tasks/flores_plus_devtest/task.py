@@ -22,7 +22,7 @@ MAPPING_FLORES = {'ac':'ace_Arab', 'ace':'ace_Latn', 'acm':'acm_Arab', 'acq': 'a
                   'bo': 'bod_Tibt', 'bs': 'bos_Latn', 'bug': 'bug_Latn', 'bg': 'bul_Cyrl', 'ca': 'cat_Latn', 'ceb': 'ceb_Latn', 
                   'cs': 'ces_Latn', 'cjk': 'cjk_Latn', 'ckb': 'ckb_Arab', 'crh': 'crh_Latn', 'cy': 'cym_Latn', 'da': 'dan_Latn', 
                   'de': 'deu_Latn', 'dik': 'dik_Latn', 'dyu': 'dyu_Latn', 'dz': 'dzo_Tibt', 'el': 'ell_Grek', 'en': 'eng_Latn', 
-                  'eo': 'epo_Latn', 'eu': 'eus_Latn', 'et': 'est_Latn', 'ee':'ewe_Latn', 'fo': 'fao_Latn', 'fi': 'fin_Latn', 
+                  'eo': 'epo_Latn', 'eu': 'eus_Latn', 'et': 'ekk_Latn', 'ee':'ewe_Latn', 'fo': 'fao_Latn', 'fi': 'fin_Latn', 
                   'fj': 'fij_Latn', 'fon': 'fon_Latn', 'fr': 'fra_Latn', 'fur': 'fur_Latn', 'ff': 'fuv_Latn', 'om': 'gaz_Latn', 
                   'gd': 'gla_Latn', 'ga': 'gle_Latn', 'gl': 'glg_Latn', 'gn': 'grn_Latn', 'gu': 'guj_Gujr', 'ht': 'hat_Latn', 
                   'ha': 'hau_Latn', 'he': 'heb_Hebr', 'hi': 'hin_Deva', 'hne': 'hne_Deva', 'hr': 'hrv_Latn', 'hu': 'hun_Latn', 
