@@ -96,7 +96,7 @@ Bilingual `fairseq` models are implemented using `CTranslate2` library. A fairse
 ```bash
 path_fairseq_model='./models/en-ca/model.pt'
 data_dir='./models/en-ca/data-dir/'
-spm_path='./models/en-ca/'
+spm_path='./models/en-ca/spm.model'
 output_dir='results/en_ca_fairseq/results_en_ca_flores_devtest.json'
 model_name='en-ca_fairseq'
 prompt_style='default'
