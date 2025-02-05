@@ -115,7 +115,7 @@ In this command:
 
 - `path_fairseq_model` is the file path to the bilingual fairseq model checkpoint.
 - `data_dir` points to the directory containing the data binary files used during model training.
-- `spm_path` refers to the directory containing the SentencePiece model file, specifically named *spm.model*. 
+- `spm_path` refers to the path containing the SentencePiece model file, specifically named *spm.model*. 
 
 #### Simplegenerator
 
