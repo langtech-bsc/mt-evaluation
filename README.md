@@ -75,13 +75,15 @@ To evaluate a bilingual CTranslate2 model on *flores dev* you can use the follow
 ```bash
 path_bilingual_model='./models/en-ca'
 output_dir='results/en_ca_ctranslate/results_en_ca_flores_devtest.json'
+prompt_style='default'
 
 lm_eval --model ctranslate \
     --model_args model=$path_bilingual_model \
     --tasks en_ca_flores_devtest \
     --output_path $output_dir \
     --write_out \
-    --gen_kwargs 'num_beams=8,length_penalty=1,no_repeat_ngram_size=0,max_length=250'
+    --gen_kwargs 'num_beams=8,length_penalty=1,no_repeat_ngram_size=0,max_length=250' \
+    --translation_kwargs "src_language='',tgt_language='',prompt_style=${prompt_style}"
 ```
 
 #### Fairseq
@@ -97,6 +99,7 @@ data_dir='./models/en-ca/data-dir/'
 spm_path='./models/en-ca/'
 output_dir='results/en_ca_fairseq/results_en_ca_flores_devtest.json'
 model_name='en-ca_fairseq'
+prompt_style='default'
 
 lm_eval --model fairseq \
     --model_args "model_name=${model_name},model_fairseq=${path_fairseq_model},data_dir=${data_dir},spm_path=${spm_path}" \
@@ -104,7 +107,8 @@ lm_eval --model fairseq \
     --output_path $output_dir \
     --write_out \
     --verbosity 'INFO' \
-    --gen_kwargs 'num_beams=8,length_penalty=1,no_repeat_ngram_size=0,max_length=250'
+    --gen_kwargs 'num_beams=8,length_penalty=1,no_repeat_ngram_size=0,max_length=250' \
+    --translation_kwargs "src_language='',tgt_language='',prompt_style=${prompt_style}"
 ```
 
 In this command:
@@ -123,6 +127,7 @@ For example, to evaluate a model named *google_translations2024*, with pre-gener
 model_name='google_translations2024'
 path_generated='./google_translations2024/flores_devtest/en-ca/ca.txt'
 output_dir='results/google_translations2024/results_en_ca_flores_devtest.json'
+prompt_style='default'
 
 lm_eval --model simplegenerator \
     --model_args "model_name=${model_name},sentence_file_path=${path_generated}" \
@@ -130,6 +135,7 @@ lm_eval --model simplegenerator \
     --output_path $output_dir \
     --write_out \
     --verbosity 'INFO' \
+    --translation_kwargs "src_language='',tgt_language='',prompt_style=${prompt_style}"
 ```
 
 #### HuggingFace transformers
@@ -496,14 +502,15 @@ tgt_language='spa_Latn'
 prompt_style='nllb'
 output_dir='results/nllb600_hf/results_en_es_geneval_single.json'
 
-lm_eval --model hf_mt \
-        --model_args "pretrained=${model},src_language=${src_language},tgt_language=${tgt_language},prompt_style=${prompt_style},trust_remote_code=True,dtype=bfloat16" \
+lm_eval --model hf \
+        --model_args "pretrained=${model},trust_remote_code=True,dtype=bfloat16" \
         --tasks en_es_geneval_single \
         --num_fewshot 0 \
         --batch_size 6 \
         --output_path $output_dir \
         --write_out \
-        --verbosity 'INFO'
+        --verbosity 'INFO' \
+        --translation_kwargs "src_language=${src_language},tgt_language=${tgt_language},prompt_style=${prompt_style}"
 ```
 </details>
 
@@ -547,14 +554,15 @@ tgt_language='spa_Latn'
 prompt_style='nllb'
 output_dir='results/nllb600_hf/results_en_es_geneval_contextual.json'
 
-lm_eval --model hf_mt \
-        --model_args "pretrained=${model},src_language=${src_language},tgt_language=${tgt_language},prompt_style=${prompt_style},trust_remote_code=True,dtype=bfloat16" \
+lm_eval --model hf \
+        --model_args "pretrained=${model},trust_remote_code=True,dtype=bfloat16" \
         --tasks en_es_geneval_contextual \
         --num_fewshot 0 \
         --batch_size 6 \
         --output_path $output_dir \
         --write_out \
-        --verbosity 'INFO'
+        --verbosity 'INFO' \
+        --translation_kwargs "src_language=${src_language},tgt_language=${tgt_language},prompt_style=${prompt_style}"
 ```
 </details>
 
