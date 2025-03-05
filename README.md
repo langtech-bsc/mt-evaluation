@@ -784,4 +784,14 @@ To start the Streamlit app and access the visual interface, follow these steps:
 
 ## Citation
 
-Paper coming soon.
+If you want to cite this repository in your work, please consider citing:
+
+@misc{gilabert2024mtlensallinonetoolkitbetter,
+      title={MT-LENS: An all-in-one Toolkit for Better Machine Translation Evaluation}, 
+      author={Javier García Gilabert and Carlos Escolano and Audrey Mash and Xixian Liao and Maite Melero},
+      year={2024},
+      eprint={2412.11615},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2412.11615}, 
+}
