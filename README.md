@@ -787,13 +787,23 @@ To start the Streamlit app and access the visual interface, follow these steps:
 If you want to cite this repository in your work, please consider citing:
 
 ```bibtex
-@misc{gilabert2024mtlensallinonetoolkitbetter,
-      title={MT-LENS: An all-in-one Toolkit for Better Machine Translation Evaluation}, 
-      author={Javier García Gilabert and Carlos Escolano and Audrey Mash and Xixian Liao and Maite Melero},
-      year={2024},
-      eprint={2412.11615},
-      archivePrefix={arXiv},
-      primaryClass={cs.CL},
-      url={https://arxiv.org/abs/2412.11615}, 
+@inproceedings{garcia-gilabert-etal-2025-mt,
+    title = "{MT}-{LENS}: An all-in-one Toolkit for Better Machine Translation Evaluation",
+    author = "Garc{\'i}a Gilabert, Javier  and
+      Escolano, Carlos  and
+      Mash, Audrey  and
+      Liao, Xixian  and
+      Melero, Maite",
+    editor = "Dziri, Nouha  and
+      Ren, Sean (Xiang)  and
+      Diao, Shizhe",
+    booktitle = "Proceedings of the 2025 Conference of the Nations of the Americas Chapter of the Association for Computational Linguistics: Human Language Technologies (System Demonstrations)",
+    month = apr,
+    year = "2025",
+    address = "Albuquerque, New Mexico",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2025.naacl-demo.6/",
+    pages = "51--60",
+    ISBN = "979-8-89176-191-9"
 }
 ```
