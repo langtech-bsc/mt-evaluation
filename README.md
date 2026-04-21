@@ -26,7 +26,7 @@ MT-lens is a fork of the EleutherAI's [lm-evaluation-harness](https://github.com
 To use our framework first clone the project by:
 
 ```bash
-git clone https://github.com/langtech-bsc/mt-evaluation.git
+git clone https://github.com/bsc-lt/mt-evaluation.git
 ```
 
 Then install the required dependencies:
