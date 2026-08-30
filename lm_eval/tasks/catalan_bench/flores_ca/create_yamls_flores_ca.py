@@ -259,7 +259,7 @@ def doc_to_text(src: str, tgt: str) -> str:
     src_name, tgt_name = map(code_to_language_name, [src, tgt])
 
     return f"""\
-{src_name} sentence: {jinja_var('sentence_' + src)}
+{src_name} sentence: {jinja_var("sentence_" + src)}
 {tgt_name} sentence:"""
 
 
@@ -295,7 +295,7 @@ def gen_lang_yamls(output_dir: str, overwrite: bool) -> None:
                             #                             "group": [f"{BENCH_NAME}_bench", f"{BENCH_NAME}_bench_flores"],
                             #                            "group": "flores_ca",
                             "include": "_flores_common_yaml",
-                            "task": f"flores_{lang_pair_name}",
+                            "task": f"catalan_bench_flores_{lang_pair_name}",
                             "doc_to_text": doc_to_text(src, tgt),
                             "doc_to_target": doc_to_target(tgt),
                         },

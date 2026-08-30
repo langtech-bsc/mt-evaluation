@@ -12,10 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import contextlib
 import importlib
+import logging
 import pathlib
+import tempfile
 from copy import deepcopy
-from typing import List, Literal
+from typing import Literal
 
 import filelock
 import numpy as np
@@ -27,11 +30,13 @@ from lm_eval.api.model import LM
 from lm_eval.api.registry import register_model
 from lm_eval.models.utils import Collator
 from lm_eval.utils import (
-    eval_logger,
     get_rolling_token_windows,
     make_disjoint_window,
     simple_parse_args_string,
 )
+
+
+eval_logger = logging.getLogger(__name__)
 
 
 def _patch_pretrained_cfg(
@@ -39,12 +44,12 @@ def _patch_pretrained_cfg(
 ):
     try:
         import omegaconf
-    except ModuleNotFoundError:
-        raise Exception(
+    except ModuleNotFoundError as exception:
+        raise type(exception)(
             "Attempted to use 'nemo_lm' model type, but package `nemo` is not installed"
             "Please install nemo following the instructions in the README: either with a NVIDIA PyTorch or NeMo container, "
             "or installing nemo following https://github.com/NVIDIA/NeMo.",
-        )
+        ) from exception
 
     omegaconf.OmegaConf.set_struct(pretrained_cfg, True)
     with omegaconf.open_dict(pretrained_cfg):
@@ -79,12 +84,12 @@ def load_model(
             MegatronGPTModel,
         )
         from nemo.collections.nlp.parts.nlp_overrides import NLPSaveRestoreConnector
-    except ModuleNotFoundError:
-        raise Exception(
+    except ModuleNotFoundError as exception:
+        raise type(exception)(
             "Attempted to use 'nemo_lm' model type, but package `nemo` is not installed"
             "Please install nemo following the instructions in the README: either with a NVIDIA PyTorch or NeMo container, "
             "or installing nemo following https://github.com/NVIDIA/NeMo.",
-        )
+        ) from exception
     model_path = pathlib.Path(model_path)
 
     save_restore_connector = NLPSaveRestoreConnector()
@@ -110,7 +115,9 @@ def load_model(
     model_class = getattr(importlib.import_module(module_name), class_name)
 
     # monkeypatch _build_tokenizer method to be process-safe
-    tokenizer_lock = filelock.FileLock(f"/tmp/{model_path.name}.tokenizer.lock")
+    tokenizer_lock = filelock.FileLock(
+        pathlib.Path(tempfile.gettempdir()) / f"{model_path.name}.tokenizer.lock"
+    )
 
     def _synced_build_tokenizer(self):
         with tokenizer_lock:
@@ -129,23 +136,21 @@ def load_model(
 
     model.freeze()
     model.training = False
-    try:
+    with contextlib.suppress(AttributeError):
         # Have to turn off activations_checkpoint_method for inference
         model.model.language_model.encoder.activations_checkpoint_method = None
-    except AttributeError:
-        pass
     return model
 
 
 def setup_distributed_environment(trainer):
     try:
         from nemo.utils.app_state import AppState
-    except ModuleNotFoundError:
-        raise Exception(
+    except ModuleNotFoundError as exception:
+        raise type(exception)(
             "Attempted to use 'nemo_lm' model type, but package `nemo` is not installed"
             "Please install nemo following the instructions in the README: either with a NVIDIA PyTorch or NeMo container, "
             "or installing nemo following https://github.com/NVIDIA/NeMo.",
-        )
+        ) from exception
 
     def dummy():
         return
@@ -187,19 +192,19 @@ class NeMoLM(LM):
         **kwargs,
     ):
         try:
+            from lightning.pytorch.trainer.trainer import Trainer
             from nemo.collections.nlp.modules.common.text_generation_utils import (
                 generate,
             )
             from nemo.collections.nlp.parts.nlp_overrides import NLPDDPStrategy
-            from pytorch_lightning.trainer.trainer import Trainer
 
             self.generate = generate
-        except ModuleNotFoundError:
-            raise Exception(
+        except ModuleNotFoundError as exception:
+            raise type(exception)(
                 "Attempted to use 'nemo_lm' model type, but package `nemo` is not installed"
                 "Please install nemo following the instructions in the README: either with a NVIDIA PyTorch or NeMo container, "
                 "or installing nemo following https://github.com/NVIDIA/NeMo.",
-            )
+            ) from exception
 
         super().__init__()
 
@@ -305,24 +310,23 @@ class NeMoLM(LM):
     def world_size(self):
         return self._world_size
 
-    @property
-    def accelerator(self):
-        return self._Accelerator(self.world_size)
+    def all_gather(self, tensor):
+        if self.world_size <= 1:
+            return tensor
+        gathered = [torch.zeros_like(tensor) for _ in range(self.world_size)]
+        torch.distributed.all_gather(gathered, tensor)
+        return torch.cat(gathered)
 
-    class _Accelerator:
-        def __init__(self, world_size):
-            self.world_size = world_size
+    def gather_object(self, obj, dst=0):
+        if self.world_size <= 1:
+            return [obj]
+        result = [None] * self.world_size if self.rank == dst else None
+        torch.distributed.gather_object(obj=obj, object_gather_list=result, dst=dst)
+        return result
 
-        def wait_for_everyone(self):
+    def barrier(self):
+        if self.world_size > 1:
             torch.distributed.barrier()
-
-        def gather(self, local_tensor):
-            gathered_tensors = [
-                torch.zeros(1, dtype=local_tensor.dtype).cuda()
-                for _ in range(self.world_size)
-            ]
-            torch.distributed.all_gather(gathered_tensors, local_tensor)
-            return torch.cat(gathered_tensors)
 
     def tok_encode(self, string: str):
         return self.tokenizer.text_to_ids(string)
@@ -358,8 +362,8 @@ class NeMoLM(LM):
         return self._loglikelihood_tokens(new_reqs)
 
     def loglikelihood_rolling(
-        self, requests: List[Instance], disable_tqdm: bool = False
-    ) -> List[float]:
+        self, requests: list[Instance], disable_tqdm: bool = False
+    ) -> list[float]:
         loglikelihoods = []
 
         for (string,) in tqdm([req.args for req in requests], disable=disable_tqdm):
@@ -457,6 +461,7 @@ class NeMoLM(LM):
                 ctxlens,
                 contlens,
                 chunk,
+                strict=True,
             ):
                 # Trim at contlen since shorter contexts in a batch will have more than one token generated.
                 # Use ctxlen-1 instead of ctxlen same as for full_logprob in batch_greedy_tokens calculation
@@ -504,7 +509,7 @@ class NeMoLM(LM):
         )
         chunks = re_ords.get_batched(n=self.batch_size, batch_fn=None)
         for chunk in chunks:
-            contexts, all_gen_kwargs = zip(*chunk)
+            contexts, all_gen_kwargs = zip(*chunk, strict=True)
             # we assume all gen kwargs in the batch are the same
             # this is safe to assume because the `grouper` object ensures it.
             req_args = all_gen_kwargs[0]
@@ -530,13 +535,13 @@ class NeMoLM(LM):
             answers = output["sentences"]
 
             continuations = []
-            for context, answer in zip(contexts, answers):
+            for context, answer in zip(contexts, answers, strict=True):
                 continuations.append(answer[len(context) :])
 
             for term in until:
                 continuations = [answer.split(term)[0] for answer in continuations]
 
-            for request, answer in zip(chunk, continuations):
+            for request, answer in zip(chunk, continuations, strict=True):
                 self.cache_hook.add_partial("greedy_until", request, answer)
                 res.append(answer)
 

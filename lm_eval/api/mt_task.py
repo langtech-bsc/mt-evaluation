@@ -530,6 +530,7 @@ class MTask(ConfigurableTask):
         self,
         *,
         limit: Union[int, None] = None,
+        samples=None,
         rank: int = 0,
         world_size: int = 1,
         cache_requests: bool = False,
@@ -539,7 +540,8 @@ class MTask(ConfigurableTask):
         fewshot_as_multiturn: bool = False,
         chat_template: Optional[Callable] = None,
         tokenizer_name: str = "",
-        mt_kwargs = None
+        mt_kwargs = None,
+        **kwargs,
     ) -> None:
         """Build a set of Instances for a task, and store them in task.instances"""
 
