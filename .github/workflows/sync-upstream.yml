@@ -51,6 +51,13 @@ jobs:
           if git merge "${{ steps.rel.outputs.tag }}" --no-edit; then
             echo "clean=true" >> "$GITHUB_OUTPUT"
             echo "conflicts=" >> "$GITHUB_OUTPUT"
+            # The default GITHUB_TOKEN cannot push changes to .github/workflows/*,
+            # and this fork does not want upstream's CI anyway, so restore the
+            # workflow files to our version and drop them from the sync.
+            if ! git diff --quiet "origin/${{ github.ref_name }}" -- .github/workflows; then
+              git checkout "origin/${{ github.ref_name }}" -- .github/workflows
+              git commit -m "Keep the fork's own .github/workflows (skip upstream CI changes)"
+            fi
           else
             echo "clean=false" >> "$GITHUB_OUTPUT"
             {
@@ -61,6 +68,11 @@ jobs:
             # Commit the conflict markers so the PR shows exactly what needs work
             git add -A
             git commit -m "Merge ${{ steps.rel.outputs.tag }} (WITH CONFLICTS - resolve before merging)"
+            # Same workflow-file restriction as above
+            if ! git diff --quiet "origin/${{ github.ref_name }}" -- .github/workflows; then
+              git checkout "origin/${{ github.ref_name }}" -- .github/workflows
+              git commit -m "Keep the fork's own .github/workflows (skip upstream CI changes)"
+            fi
           fi
 
       - name: Open the pull request
