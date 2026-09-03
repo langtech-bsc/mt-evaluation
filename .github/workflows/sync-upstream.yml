@@ -1,0 +1,109 @@
+name: Sync with upstream lm-evaluation-harness
+
+# Checks weekly for a new upstream release and opens a pull request that merges
+# it. Conflicts do not stop the run: the PR is opened either way, with the
+# conflicting files listed so they can be resolved by hand.
+on:
+  schedule:
+    - cron: "0 6 * * 1"   # Mondays 06:00 UTC
+  workflow_dispatch:       # also runnable from the Actions tab
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Find the newest upstream release
+        id: rel
+        run: |
+          git remote add upstream https://github.com/EleutherAI/lm-evaluation-harness.git
+          git fetch --tags upstream
+
+          # Newest tag that is a plain release: vX.Y.Z, no -dev / -rc suffix
+          TAG=$(git tag -l 'v*' --sort=-creatordate \
+                | grep -E '^v[0-9]+\.[0-9]+(\.[0-9]+)*$' | head -1)
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+          if git merge-base --is-ancestor "$TAG" HEAD 2>/dev/null; then
+            echo "already merged: $TAG"
+            echo "needed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "new release to merge: $TAG"
+            echo "needed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Merge it
+        if: steps.rel.outputs.needed == 'true'
+        id: merge
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config merge.renameLimit 20000
+          git checkout -b "sync-upstream-${{ steps.rel.outputs.tag }}"
+
+          if git merge "${{ steps.rel.outputs.tag }}" --no-edit; then
+            echo "clean=true" >> "$GITHUB_OUTPUT"
+            echo "conflicts=" >> "$GITHUB_OUTPUT"
+          else
+            echo "clean=false" >> "$GITHUB_OUTPUT"
+            {
+              echo 'conflicts<<EOF'
+              git diff --name-only --diff-filter=U
+              echo EOF
+            } >> "$GITHUB_OUTPUT"
+            # Commit the conflict markers so the PR shows exactly what needs work
+            git add -A
+            git commit -m "Merge ${{ steps.rel.outputs.tag }} (WITH CONFLICTS - resolve before merging)"
+          fi
+
+      - name: Open the pull request
+        if: steps.rel.outputs.needed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git push -u origin "sync-upstream-${{ steps.rel.outputs.tag }}"
+
+          if [ "${{ steps.merge.outputs.clean }}" = "true" ]; then
+            TITLE="Sync with upstream ${{ steps.rel.outputs.tag }}"
+            BODY=$(cat <<'EOF'
+          Merged cleanly, but **do not merge on green alone**. Upstream changes
+          have silently altered behaviour before, so check at least:
+
+          - `lm_eval/models/huggingface.py` - the MT stop sequences, the
+            `use_fast_tokenizer` default and the per-generation logging
+          - `lm_eval/evaluator.py` / `evaluator_utils.py` - the `mt_kwargs`
+            plumbing and the stderr skip for neural metrics
+          - `lm_eval/api/task.py` - local dataset path resolution
+          - `lm_eval/tasks/__init__.py` - the MT task imports
+
+          Then run one language pair end to end and compare the metrics against a
+          stored result. BLEU/chrF/TER should match closely; a jump in COMET,
+          BLEURT or MetricX means something moved.
+          EOF
+          )
+          else
+            TITLE="Sync with upstream ${{ steps.rel.outputs.tag }} (conflicts)"
+            BODY=$(cat <<EOF
+          The merge hit conflicts and the markers are committed as-is, so this
+          branch does **not** build. Resolve these files, then push to the branch:
+
+          \`\`\`
+          ${{ steps.merge.outputs.conflicts }}
+          \`\`\`
+
+          Rule of thumb from the v0.4.12 sync: for files upstream rewrote, take
+          their version and re-apply our changes on top rather than keeping ours.
+          EOF
+          )
+          fi
+
+          gh pr create --title "$TITLE" --body "$BODY" \
+            --base "${{ github.ref_name }}" \
+            --head "sync-upstream-${{ steps.rel.outputs.tag }}"

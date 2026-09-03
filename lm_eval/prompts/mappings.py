@@ -1,7 +1,7 @@
 ISO639_3_SCRIPT_TO_NAME = {
     'ace_Arab': 'Acehnese (Arabic script)', 'ace_Latn': 'Acehnese (Latin script)', 'acm_Arab': 'Mesopotamian Arabic', 'acq_Arab': 'Ta’izzi-Adeni Arabic',    
     'aeb_Arab': 'Tunisian Arabic', 'afr_Latn': 'Afrikaans', 'ajp_Arab': 'South Levantine Arabic', 'aka_Latn': 'Akan',    
-    'amh_Ethi': 'Amharic', 'apc_Arab': 'North Levantine Arabic', 'arb_Arab': 'Modern Standard Arabic', 'arb_Latn': 'Modern Standard Arabic (Romanized)',
+    'amh_Ethi': 'Amharic', 'apc_Arab': 'North Levantine Arabic', 'arb_Arab': 'Arabic', 'arb_Latn': 'Modern Standard Arabic (Romanized)',
     'ars_Arab': 'Najdi Arabic', 'ary_Arab': 'Moroccan Arabic', 'arz_Arab': 'Egyptian Arabic', 'asm_Beng': 'Assamese',
     'ast_Latn': 'Asturian', 'awa_Deva': 'Awadhi', 'ayr_Latn': 'Central Aymara', 'azb_Arab': 'South Azerbaijani',  
     'azj_Latn': 'North Azerbaijani', 'bak_Cyrl': 'Bashkir', 'bam_Latn': 'Bambara', 'ban_Latn': 'Balinese',
@@ -24,7 +24,7 @@ ISO639_3_SCRIPT_TO_NAME = {
     'kaz_Cyrl': 'Kazakh', 'kbp_Latn': 'Kabiyè', 'kea_Latn': 'Kabuverdianu', 'khm_Khmr': 'Khmer',
     'kik_Latn': 'Kikuyu', 'kin_Latn': 'Kinyarwanda', 'kir_Cyrl': 'Kyrgyz', 'kmb_Latn': 'Kimbundu',
     'kmr_Latn': 'Northern Kurdish', 'kon_Latn': 'Kikongo', 'kor_Hang': 'Korean', 'lao_Laoo': 'Lao',
-    'lij_Latn': 'Ligurian', 'lim_Latn': 'Limburgish', 'lin_Latn': 'Lingala', 'lit_Latn': 'Lithuanian',
+    'lij_Latn': 'Ligurian', 'lld_Latn': 'Ladin', 'lim_Latn': 'Limburgish', 'lin_Latn': 'Lingala', 'lit_Latn': 'Lithuanian',
     'lmo_Latn': 'Lombard', 'ltg_Latn': 'Latgalian', 'ltz_Latn': 'Luxembourgish', 'lua_Latn': 'Luba-Kasai',
     'lug_Latn': 'Ganda', 'luo_Latn': 'Luo', 'lus_Latn': 'Mizo', 'lvs_Latn': 'Latvian',
     'mag_Deva': 'Magahi', 'mai_Deva': 'Maithili', 'mal_Mlym': 'Malayalam', 'mar_Deva': 'Marathi',
@@ -40,7 +40,7 @@ ISO639_3_SCRIPT_TO_NAME = {
     'shn_Mymr': 'Shan', 'sin_Sinh': 'Sinhala', 'slk_Latn': 'Slovak', 'slv_Latn': 'Slovenian',
     'smo_Latn': 'Samoan', 'sna_Latn': 'Shona', 'snd_Arab': 'Sindhi', 'som_Latn': 'Somali',
     'sot_Latn': 'Southern Sotho', 'spa_Latn': 'Spanish', 'als_Latn': 'Tosk Albanian', 'srd_Latn': 'Sardinian',
-    'srp_Cyrl': 'Serbian', 'ssw_Latn': 'Swati', 'sun_Latn': 'Sundanese', 'swe_Latn': 'Swedish',
+    'srp_Cyrl': 'Serbian', 'srp_Latn': 'Serbian_Latin','ssw_Latn': 'Swati', 'sun_Latn': 'Sundanese', 'swe_Latn': 'Swedish',
     'swh_Latn': 'Swahili', 'szl_Latn': 'Silesian', 'tam_Taml': 'Tamil', 'tat_Cyrl': 'Tatar',
     'tel_Telu': 'Telugu', 'tgk_Cyrl': 'Tajik', 'tgl_Latn': 'Tagalog', 'tha_Thai': 'Thai',
     'tir_Ethi': 'Tigrinya', 'taq_Latn': 'Tamasheq (Latin script)', 'taq_Tfng': 'Tamasheq (Tifinagh script)', 'tpi_Latn': 'Tok Pisin',
@@ -49,14 +49,14 @@ ISO639_3_SCRIPT_TO_NAME = {
     'ukr_Cyrl': 'Ukrainian', 'umb_Latn': 'Umbundu', 'urd_Arab': 'Urdu', 'uzn_Latn': 'Northern Uzbek',
     'vec_Latn': 'Venetian', 'vie_Latn': 'Vietnamese', 'war_Latn': 'Waray', 'wol_Latn': 'Wolof',
     'xho_Latn': 'Xhosa', 'ydd_Hebr': 'Eastern Yiddish', 'yor_Latn': 'Yoruba', 'yue_Hant': 'Yue Chinese',
-    'zho_Hans': 'Chinese (Simplified)', 'zho_Hant': 'Chinese (Traditional)', 'zsm_Latn': 'Standard Malay', 'zul_Latn': 'Zulu',
+    'zho_Hans': 'Chinese', 'zho_Hant': 'Chinese (Traditional)', 'zsm_Latn': 'Standard Malay', 'zul_Latn': 'Zulu',
     'arn_Latn':'Aranese', 'arg_Latn':'Aragonese'
 }
 
 ISO639_3_SCRIPT_TO_SALAMANDRATA7B = {
     'ace_Arab': 'Acehnese (Arabic script)', 'ace_Latn': 'Acehnese (Latin script)', 'acm_Arab': 'Mesopotamian Arabic', 'acq_Arab': 'Ta’izzi-Adeni Arabic',    
     'aeb_Arab': 'Tunisian Arabic', 'afr_Latn': 'Afrikaans', 'ajp_Arab': 'South Levantine Arabic', 'aka_Latn': 'Akan',    
-    'amh_Ethi': 'Amharic', 'apc_Arab': 'North Levantine Arabic', 'arb_Arab': 'Modern Standard Arabic', 'arb_Latn': 'Modern Standard Arabic (Romanized)',
+    'amh_Ethi': 'Amharic', 'apc_Arab': 'North Levantine Arabic', 'arb_Arab': 'Arabic', 'arb_Latn': 'Modern Standard Arabic (Romanized)',
     'ars_Arab': 'Najdi Arabic', 'ary_Arab': 'Moroccan Arabic', 'arz_Arab': 'Egyptian Arabic', 'asm_Beng': 'Assamese',
     'ast_Latn': 'Asturian', 'awa_Deva': 'Awadhi', 'ayr_Latn': 'Central Aymara', 'azb_Arab': 'South Azerbaijani',  
     'azj_Latn': 'North Azerbaijani', 'bak_Cyrl': 'Bashkir', 'bam_Latn': 'Bambara', 'ban_Latn': 'Balinese',
@@ -66,7 +66,7 @@ ISO639_3_SCRIPT_TO_SALAMANDRATA7B = {
     'ces_Latn': 'Czech', 'cjk_Latn': 'Chokwe', 'ckb_Arab': 'Central Kurdish', 'crh_Latn': 'Crimean Tatar',
     'cym_Latn': 'Welsh', 'dan_Latn': 'Danish', 'deu_Latn': 'German', 'dik_Latn': 'Southwestern Dinka',
     'dyu_Latn': 'Dyula', 'dzo_Tibt': 'Dzongkha', 'ell_Grek': 'Greek', 'eng_Latn': 'English',
-    'epo_Latn': 'Esperanto', 'est_Latn': 'Estonian', 'eus_Latn': 'Basque', 'ewe_Latn': 'Ewe',
+    'epo_Latn': 'Esperanto', 'ekk_Latn': 'Estonian', 'eus_Latn': 'Basque', 'ewe_Latn': 'Ewe',
     'fao_Latn': 'Faroese', 'fij_Latn': 'Fijian', 'fin_Latn': 'Finnish', 'fon_Latn': 'Fon',
     'fra_Latn': 'French', 'fur_Latn': 'Friulian', 'fuv_Latn': 'Nigerian Fulfulde', 'gla_Latn': 'Scottish Gaelic',
     'gle_Latn': 'Irish', 'glg_Latn': 'Galician', 'grn_Latn': 'Guarani', 'guj_Gujr': 'Gujarati',
@@ -79,7 +79,7 @@ ISO639_3_SCRIPT_TO_SALAMANDRATA7B = {
     'kaz_Cyrl': 'Kazakh', 'kbp_Latn': 'Kabiyè', 'kea_Latn': 'Kabuverdianu', 'khm_Khmr': 'Khmer',
     'kik_Latn': 'Kikuyu', 'kin_Latn': 'Kinyarwanda', 'kir_Cyrl': 'Kyrgyz', 'kmb_Latn': 'Kimbundu',
     'kmr_Latn': 'Northern Kurdish', 'kon_Latn': 'Kikongo', 'kor_Hang': 'Korean', 'lao_Laoo': 'Lao',
-    'lij_Latn': 'Ligurian', 'lim_Latn': 'Limburgish', 'lin_Latn': 'Lingala', 'lit_Latn': 'Lithuanian',
+    'lij_Latn': 'Ligurian', 'lld_Latn': 'Ladin', 'lim_Latn': 'Limburgish', 'lin_Latn': 'Lingala', 'lit_Latn': 'Lithuanian',
     'lmo_Latn': 'Lombard', 'ltg_Latn': 'Latgalian', 'ltz_Latn': 'Luxembourgish', 'lua_Latn': 'Luba-Kasai',
     'lug_Latn': 'Ganda', 'luo_Latn': 'Luo', 'lus_Latn': 'Mizo', 'lvs_Latn': 'Latvian',
     'mag_Deva': 'Magahi', 'mai_Deva': 'Maithili', 'mal_Mlym': 'Malayalam', 'mar_Deva': 'Marathi',
@@ -95,7 +95,7 @@ ISO639_3_SCRIPT_TO_SALAMANDRATA7B = {
     'shn_Mymr': 'Shan', 'sin_Sinh': 'Sinhala', 'slk_Latn': 'Slovak', 'slv_Latn': 'Slovenian',
     'smo_Latn': 'Samoan', 'sna_Latn': 'Shona', 'snd_Arab': 'Sindhi', 'som_Latn': 'Somali',
     'sot_Latn': 'Southern Sotho', 'spa_Latn': 'Spanish', 'als_Latn': 'Tosk Albanian', 'srd_Latn': 'Sardinian',
-    'srp_Cyrl': 'Serbian', 'ssw_Latn': 'Swati', 'sun_Latn': 'Sundanese', 'swe_Latn': 'Swedish',
+    'srp_Cyrl': 'Serbian_Cyrillic', 'srp_Latn': 'Serbian_Latin','ssw_Latn': 'Swati', 'sun_Latn': 'Sundanese', 'swe_Latn': 'Swedish',
     'swh_Latn': 'Swahili', 'szl_Latn': 'Silesian', 'tam_Taml': 'Tamil', 'tat_Cyrl': 'Tatar',
     'tel_Telu': 'Telugu', 'tgk_Cyrl': 'Tajik', 'tgl_Latn': 'Tagalog', 'tha_Thai': 'Thai',
     'tir_Ethi': 'Tigrinya', 'taq_Latn': 'Tamasheq (Latin script)', 'taq_Tfng': 'Tamasheq (Tifinagh script)', 'tpi_Latn': 'Tok Pisin',
@@ -104,8 +104,44 @@ ISO639_3_SCRIPT_TO_SALAMANDRATA7B = {
     'ukr_Cyrl': 'Ukrainian', 'umb_Latn': 'Umbundu', 'urd_Arab': 'Urdu', 'uzn_Latn': 'Northern Uzbek',
     'vec_Latn': 'Venetian', 'vie_Latn': 'Vietnamese', 'war_Latn': 'Waray', 'wol_Latn': 'Wolof',
     'xho_Latn': 'Xhosa', 'ydd_Hebr': 'Eastern Yiddish', 'yor_Latn': 'Yoruba', 'yue_Hant': 'Yue Chinese',
-    'zho_Hans': 'Chinese (Simplified)', 'zho_Hant': 'Chinese (Traditional)', 'zsm_Latn': 'Standard Malay', 'zul_Latn': 'Zulu',
-    'arn_Latn':'Aranese', 'arg_Latn':'Aragonese', 'val_Latn':'Catalan][Valencian'
+    'zho_Hans': 'Chinese', 'zho_Hant': 'Traditional Chinese', 'zsm_Latn': 'Standard Malay', 'zul_Latn': 'Zulu',
+    'arn_Latn':'Aranese', 'arg_Latn':'Aragonese', 'val_Latn':'Valencian'
+}
+
+# Language names as the CPT wrapping actually used them, for evaluating *base*
+# (continued-pretraining) checkpoints of the salamandraTA_extended family.
+# The instruction data uses 'Norwegian Bokmål' for nob_Latn, so the instruct
+# prompt styles must keep ISO639_3_SCRIPT_TO_SALAMANDRATA7B; only the base
+# styles point here. See train_nemo/salamandraTA_extended_cp2/subsample.py
+# (LANG_TABLE) for the authoritative wrapping names.
+#
+# BOTH overrides below must STAY. An evaluation prompt has to match what the
+# checkpoint was actually trained on, and neither entry is made obsolete by
+# fixing the wrapper source: a source fix changes future wrapping, not the data
+# a finished checkpoint already saw.
+ISO639_3_SCRIPT_TO_SALAMANDRATA_EXTENDED_BASE = {
+    **ISO639_3_SCRIPT_TO_SALAMANDRATA7B,
+
+    # PERMANENT. 2026-08-06 decision: CPT naming is canonical, and CPT wraps
+    # code 'no' as "Norwegian". The SFT data was changed to match, not the other
+    # way round, so this is now the correct name rather than a temporary patch.
+    'nob_Latn': 'Norwegian',
+
+    # KEEP. 'hu' was missing from the CPT LANG_TABLE, so LANG_TABLE.get(code,
+    # code) wrapped all six Hungarian directions — 7,589,483,856 wrapped tokens
+    # — with the bare code. subsample.py was fixed on 2026-08-06 ('hu' added and
+    # the silent fallback replaced by a loud failure), but that does NOT make
+    # this line droppable:
+    #
+    #   * CPT2 is finished; its checkpoint only ever saw "hu".
+    #   * CPT3 is DocHPLT-only across 22 directions and contains no Hungarian
+    #     at all, so it cannot re-teach the correct name either.
+    #
+    # Dropping this line would prompt "Hungarian" to a model that has never seen
+    # it — reintroducing the exact mismatch the override exists to prevent, just
+    # in the opposite direction. Drop it only when evaluating a checkpoint
+    # trained on data wrapped by the FIXED subsample.py.
+    'hun_Latn': 'hu',
 }
 
 ISO639_3_SCRIPT_TO_ISO639_1 = {
@@ -134,7 +170,7 @@ ISO639_3_SCRIPT_TO_ISO639_1 = {
     'kaz_Cyrl': 'kk', 'kbp_Latn': 'kbp', 'kea_Latn': 'kea', 'khm_Khmr': 'km',
     'kik_Latn': 'ki', 'kin_Latn': 'rw', 'kir_Cyrl': 'ky', 'kmb_Latn': 'kmb',
     'kmr_Latn': 'kmr', 'kon_Latn': 'kon', 'kor_Hang': 'ko', 'lao_Laoo': 'lo',
-    'lij_Latn': 'lij', 'lim_Latn': 'li', 'lin_Latn': 'ln', 'lit_Latn': 'lt',
+    'lij_Latn': 'lij', 'lld_Latn': 'lld', 'lim_Latn': 'li', 'lin_Latn': 'ln', 'lit_Latn': 'lt',
     'lmo_Latn': 'lmo', 'ltg_Latn': 'ltg', 'ltz_Latn': 'lb', 'lua_Latn': 'lua',
     'lug_Latn': 'lg', 'luo_Latn': 'luo', 'lus_Latn': 'lus', 'lvs_Latn': 'lv',
     'mag_Deva': 'mag', 'mai_Deva': 'mai', 'mal_Mlym': 'ml', 'mar_Deva': 'mr',

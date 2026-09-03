@@ -130,6 +130,14 @@ class GENEVAL_SINGLE(MTask):
         return accuracies
 
 
+@register_task("en_ca_geneval_single")
+class GENEVAL_SINGLE_EN_CA(GENEVAL_SINGLE):
+    def __init__(self, config=None):
+        super().__init__(config={'target_delimiter': '', 'validation_split':'en_ca'})
+
+    def get_target(self):
+        return 'cat_Latn'
+
 @register_task("en_ar_geneval_single")
 class GENEVAL_SINGLE_EN_AR(GENEVAL_SINGLE):
     def __init__(self, config=None):

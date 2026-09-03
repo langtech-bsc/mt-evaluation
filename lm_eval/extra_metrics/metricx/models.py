@@ -34,8 +34,30 @@ MT5Config = transformers.models.mt5.modeling_mt5.MT5Config
 MT5PreTrainedModel = transformers.models.mt5.modeling_mt5.MT5PreTrainedModel
 MT5Stack = transformers.models.mt5.modeling_mt5.MT5Stack
 
-__HEAD_MASK_WARNING_MSG = (
-    transformers.models.mt5.modeling_mt5.__HEAD_MASK_WARNING_MSG  # pylint: disable=protected-access
+
+def _build_mt5_stack(config, embed_tokens):
+  """Build an MT5Stack sharing `embed_tokens`.
+
+  transformers 4 took the shared embedding as a constructor argument;
+  transformers 5 builds its own and expects set_input_embeddings afterwards.
+  Either way the encoder and decoder end up sharing one embedding, which the
+  MetricX checkpoint relies on.
+  """
+  try:
+    return MT5Stack(config, embed_tokens)
+  except TypeError:
+    stack = MT5Stack(config)
+    stack.set_input_embeddings(embed_tokens)
+    return stack
+
+# transformers 5 dropped this private constant; it is only the text of a
+# deprecation warning, so fall back to the wording it used in transformers 4.
+__HEAD_MASK_WARNING_MSG = getattr(
+    transformers.models.mt5.modeling_mt5,
+    "__HEAD_MASK_WARNING_MSG",  # pylint: disable=protected-access
+    "The input argument `head_mask` was split into two arguments `head_mask` and"
+    " `decoder_head_mask`. Currently, `decoder_head_mask` is set to copy `head_mask`,"
+    " but this feature is deprecated and will be removed in future versions.",
 )
 
 
@@ -58,13 +80,13 @@ class MT5ForRegression(MT5PreTrainedModel):
     encoder_config.is_decoder = False
     encoder_config.use_cache = False
     encoder_config.is_encoder_decoder = False
-    self.encoder = MT5Stack(encoder_config, self.shared)
+    self.encoder = _build_mt5_stack(encoder_config, self.shared)
 
     decoder_config = copy.deepcopy(config)
     decoder_config.is_decoder = True
     decoder_config.is_encoder_decoder = False
     decoder_config.num_layers = config.num_decoder_layers
-    self.decoder = MT5Stack(decoder_config, self.shared)
+    self.decoder = _build_mt5_stack(decoder_config, self.shared)
 
     self.lm_head = nn.Linear(config.d_model, config.vocab_size, bias=False)
 
@@ -174,7 +196,12 @@ class MT5ForRegression(MT5PreTrainedModel):
       self.lm_head = self.lm_head.to(self.encoder.first_device)
       sequence_output = sequence_output.to(self.lm_head.weight.device)
 
-    if self.config.tie_word_embeddings:
+    # The rescale belongs to the tied-embedding setup, where lm_head reuses the
+    # input embedding. Checking the weights instead of config.tie_word_embeddings
+    # because transformers 5 reports True even though MetricX's config.json says
+    # false - trusting the flag applied a spurious 1/sqrt(d_model) factor and
+    # shrank every score by ~45x.
+    if self.lm_head.weight is self.shared.weight:
       # Rescale output before projecting on vocab
       # See
       # https://github.com/tensorflow/mesh/blob/fa19d69eafc9a482aff0b59ddd96b025c0cb207d/mesh_tensorflow/transformer/transformer.py#L586

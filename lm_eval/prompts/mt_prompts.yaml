@@ -1,49 +1,186 @@
 prompt_structures:
-
   gemma2:
-    prompt: "Translate from {src} to {tgt} the following sentence: {context}"
-    language_map: True
+    prompt: 'Translate from {src} to {tgt} the following sentence: {context}'
+    language_map: true
     mapping_type: ISO639_3_SCRIPT_TO_NAME
-
   nllb:
-    prompt: "{context}"
-    language_map: False
-
+    prompt: '{context}'
+    language_map: false
   madlad400:
-    prompt: "<2{tgt}> {context}"
-    language_map: True
+    prompt: <2{tgt}> {context}
+    language_map: true
     mapping_type: ISO639_3_SCRIPT_TO_ISO639_1
-
   salamandra:
     prompt: "{src} sentence: {context} \n{tgt} sentence:"
-    language_map: True
+    language_map: true
     mapping_type: ISO639_3_SCRIPT_TO_NAME
-  
+  salamandraTA_extended_base:
+    prompt: 'Translate the following text from {src} to {tgt}.
+
+      {src}: {context}
+
+      {tgt}:'
+    language_map: true
+    mapping_type: ISO639_3_SCRIPT_TO_SALAMANDRATA_EXTENDED_BASE
   salamandraTA:
     prompt: "[{src}] {context} \n[{tgt}]"
-    language_map: True
+    language_map: true
     mapping_type: ISO639_3_SCRIPT_TO_NAME
-
   salamandraTA7B:
     prompt: "[{src}] {context} \n[{tgt}]"
-    language_map: True
+    language_map: true
     mapping_type: ISO639_3_SCRIPT_TO_SALAMANDRATA7B
-
   salamandra_instruct:
     prompt: "<|im_start|>system\n<|im_end|>\n<|im_start|>user\nTranslate the following {src} source text to {tgt}:\n{src}: {context} \n{tgt}: <|im_end|>\n<|im_start|>assistant\n"
-    language_map: True
+    language_map: true
     mapping_type: ISO639_3_SCRIPT_TO_NAME
+  salamandraTA7B_instruct:
+    prompt: "<|im_start|>system\n<|im_end|>\n<|im_start|>user\nTranslate the following text from {src} into {tgt}.\n{src}: {context} \n{tgt}: <|im_end|>\n<|im_start|>assistant\n"
+    language_map: true
+    mapping_type: ISO639_3_SCRIPT_TO_SALAMANDRATA7B
+  salamandraTA_prompt_2:
+    prompt: "<|im_start|>user\nTranslate the following text from {src} to {tgt}.\n{src}: {context} \n{tgt}: <|im_end|>\n<|im_start|>assistant\n"
+    language_map: true
+    mapping_type: ISO639_3_SCRIPT_TO_SALAMANDRATA7B
+  salamandraTA7B_instruct_xml:
+    prompt: '<|im_start|>system
 
+      <|im_end|>
+
+      <|im_start|>user
+
+      Translate this {src} text into {tgt}. Preserve any formatting, tags, delimiters, or structural elements exactly, and translate only the human-readable parts: {context} <|im_end|>
+
+      <|im_start|>assistant
+
+      '
+    language_map: true
+    mapping_type: ISO639_3_SCRIPT_TO_SALAMANDRATA7B
+  salamandraTA7B_instruct_nosource:
+    prompt: "<|im_start|>system\n<|im_end|>\n<|im_start|>user\nTranslate the following text into {tgt}.\n{context} \n{tgt}: <|im_end|>\n<|im_start|>assistant\n"
+    language_map: true
+    mapping_type: ISO639_3_SCRIPT_TO_SALAMANDRATA7B
+  salamandraTA7B_instruct_aranese:
+    prompt: '<|im_start|>system
+
+      <|im_end|>
+
+      <|im_start|>user
+
+      Translate the following text from {src} to {tgt}.
+
+      Text: {context}
+
+      Answer: <|im_end|>
+
+      <|im_start|>assistant
+
+      '
+    language_map: true
+    mapping_type: ISO639_3_SCRIPT_TO_SALAMANDRATA7B
+  salamandraTA_prompt_with_no_term:
+    prompt: '<|im_start|>user
+
+      Consider the following translation rule.
+
+      "": ""
+
+      Translate the source text from {src} to {tgt}.
+
+      {src}: {context}
+
+      {tgt}: <|im_end|>
+
+      <|im_start|>assistant
+
+      '
+    language_map: true
+    mapping_type: ISO639_3_SCRIPT_TO_SALAMANDRATA7B
+  salamandraTA_wmt:
+    prompt: 'Translate the following {src} text to {tgt}.Source text: {context}
+
+      '
+    language_map: true
+    mapping_type: ISO639_3_SCRIPT_TO_SALAMANDRATA7B
   eurollm_base:
-    prompt: "{src}: {context} {tgt}:"
-    language_map: True
+    prompt: '{src}: {context} {tgt}:'
+    language_map: true
     mapping_type: ISO639_3_SCRIPT_TO_NAME
-
   eurollm_instruct:
     prompt: "<|im_start|>system\n<|im_end|>\n<|im_start|>user\nTranslate the following {src} source text to {tgt}:\n{src}: {context} \n{tgt}: <|im_end|>\n<|im_start|>assistant\n"
-    language_map: True
+    language_map: true
     mapping_type: ISO639_3_SCRIPT_TO_NAME
-
+  tower:
+    prompt: "<|im_start|>user\nTranslate the following {src} source text to {tgt}:\n{src}: {context} \n{tgt}: <|im_end|>\n<|im_start|>assistant\n"
+    language_map: true
+    mapping_type: ISO639_3_SCRIPT_TO_NAME
   default:
-    prompt: "{context}"
-    language_map: False
+    prompt: '{context}'
+    language_map: false
+  translate_gemma:
+    prompt: '<bos><start_of_turn>user
+
+      You are a professional {src} to {tgt} translator. Your goal is to accurately convey the meaning and nuances of the original {src} text while adhering to {tgt} grammar, vocabulary, and cultural sensitivities.
+
+      Produce only the {tgt} translation, without any additional explanations or commentary. Please translate the following {src} text into {tgt}:
+
+
+
+      {context}<end_of_turn>
+
+      <start_of_turn>model
+
+      '
+    language_map: true
+    mapping_type: ISO639_3_SCRIPT_TO_NAME
+  gemma4-it:
+    prompt: '<bos><|turn>user
+
+      You are a professional {src} to {tgt} translator. Your goal is to accurately convey the meaning and nuances of the original {src} text while adhering to {tgt} grammar, vocabulary, and cultural sensitivities. Produce only the {tgt} translation, without any additional explanations or commentary.
+
+
+      Please translate the following {src} text into {tgt}:
+
+
+      {context}<turn|>
+
+      <|turn>model
+
+      <|channel>thought
+
+      <channel|>'
+    language_map: true
+    mapping_type: ISO639_3_SCRIPT_TO_NAME
+  towerplus_xml:
+    prompt: '<bos><start_of_turn>user
+
+      You are a professional {src} to {tgt} translator specializing in localization of XML content. Translate the following XML from {src} to {tgt}, following these strict rules:
+
+      1. Preserve ALL tags, attribute names, and structure exactly as in the source. Do not add, remove, rename, reorder, or merge any tags or attributes.
+
+      2. Translate only text nodes (content between tags) and the values of these attributes: title, alt, label, placeholder, aria-label.
+
+      3. Do NOT translate: tag names, attribute names, other attribute values (id, class, href, src, lang, code, etc.), XML entities (&amp;, &lt;, &gt;, &quot;, &apos;, &#nnn;), CDATA sections, comments, processing instructions, or content inside <code>, <pre>, <script>, <style> tags.
+
+      4. Preserve all whitespace, indentation, line breaks, and self-closing tag syntax exactly.
+
+      5. Adhere to {tgt} grammar, vocabulary, and cultural conventions for the translated text.
+
+      6. Output ONLY the resulting XML. No explanations, no commentary, no markdown code fences.
+
+
+      {context}<end_of_turn>
+
+      <start_of_turn>model
+
+      '
+    language_map: true
+    mapping_type: ISO639_3_SCRIPT_TO_NAME
+  aya_expanse:
+    prompt: "<BOS_TOKEN><|START_OF_TURN_TOKEN|><|USER_TOKEN|>Translate the following {src} source text to {tgt}:\n{src}: {context} \n{tgt}: <|END_OF_TURN_TOKEN|><|START_OF_TURN_TOKEN|><|CHATBOT_TOKEN|>"
+    language_map: true
+    mapping_type: ISO639_3_SCRIPT_TO_NAME
+  qwen_instruct:
+    prompt: "<|im_start|>system\nYou are a helpful translation assistant.<|im_end|>\n<|im_start|>user\nTranslate the following {src} source text to {tgt}:\n{src}: {context} \n{tgt}: <|im_end|>\n<|im_start|>assistant\n"
+    language_map: true
+    mapping_type: ISO639_3_SCRIPT_TO_NAME

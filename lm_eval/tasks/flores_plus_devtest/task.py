@@ -12,8 +12,7 @@ class _MTask(MTask):
 
 dataset_name = 'flores+_devtest'
 # TO DO: Add missing flores languages
-languages = ['ac', 'ace', 'acm', 'acq', 'aeb', 'af', 'ajp', 'sq', 'am', 'apc', 'ar', 'arb', 'ars', 'ary','arz', 'as', 'ast', 'awa', 'ay', 'aze', 'az', 'ba', 'be', 'bm', 'ban', 'bem', 'bn', 'bho', 'bj', 'bjn', 'bo', 'bs', 'bug', 'bg', 'ca', 'ceb', 'cs', 'cjk', 'ckb', 'crh', 'cy', 'da', 'de', 'dik', 'dyu', 'dz', 'el', 'en', 'eo', 'eu', 'et', 'ee', 'fo', 'fi', 'fj', 'fon', 'fr', 'fur', 'ff', 'om', 'gd', 'ga', 'gl', 'gn', 'gu', 'ht', 'ha', 'he', 'hi', 'hne', 'hr', 'hu', 'hy', 'ig', 'ilo', 'id', 'is', 'it', 'jv', 'ja', 'kab', 'kac', 'kam','kn', 'ks', 'kas', 'ka', 'kk', 'kbp', 'kea', 'mn', 'km', 'ki', 'rw', 'ky', 'kmb', 'kmr', 'kr', 'knc', 'kg','ko', 'lo', 'lij', 'li', 'ln', 'lt', 'lmo', 'ltg', 'lb', 'lua', 'lg', 'luo', 'lus', 'lv', 'mag', 'mai', 'ml', 'mr', 'min', 'min_l', 'mk', 'mt', 'mni', 'mos', 'mi', 'my', 'nl', 'nn', 'no', 'ne', 'ns', 'nus', 'nya', 'oc', 'or', 'pag', 'pa', 'pap', 'ps', 'fa', 'mg', 'pl', 'pt', 'prs', 'qu', 'ro', 'rn', 'ru', 'sg', 'sa', 'sat', 'scn', 'shn', 'si', 'sk', 'sl', 'sm', 'sn', 'sd', 'so', 'st', 'es', 'sc', 'sr', 'ss', 'su', 'sv', 'sw', 'szl', 'ta', 'tq', 'taq','tt', 'te', 'tg', 'tl', 'th', 'ti', 'tpi', 'tn', 'ts', 'tk', 'tum', 'tr', 'tw', 'tzm', 'ug', 'uk', 'umb', 'ur', 'uz', 'vec', 'vi', 'war', 'wo', 'xh', 'yi', 'yo', 'yue', 'zh', 'zho', 'ms', 'zu', 'arg', 'arn', 'vl']
-
+languages = ['ac', 'ace', 'acm', 'acq', 'aeb', 'af', 'ajp', 'sq', 'am', 'apc', 'ar', 'arb', 'ars', 'ary','arz', 'as', 'ast', 'awa', 'ay', 'aze', 'az', 'ba', 'be', 'bm', 'ban', 'bem', 'bn', 'bho', 'bj', 'bjn', 'bo', 'bs', 'bug', 'bg', 'ca', 'ceb', 'cs', 'cjk', 'ckb', 'crh', 'cy', 'da', 'de', 'dik', 'dyu', 'dz', 'el', 'en', 'eo', 'eu', 'et', 'ee', 'fo', 'fi', 'fj', 'fon', 'fr', 'fur', 'ff', 'om', 'gd', 'ga', 'gl', 'gn', 'gu', 'ht', 'ha', 'he', 'hi', 'hne', 'hr', 'hu', 'hy', 'ig', 'ilo', 'id', 'is', 'it', 'jv', 'ja', 'kab', 'kac', 'kam','kn', 'ks', 'kas', 'ka', 'kk', 'kbp', 'kea', 'mn', 'km', 'ki', 'rw', 'ky', 'kmb', 'kmr', 'kr', 'knc', 'kg','ko', 'lo', 'lij', 'li', 'ln', 'lt', 'lmo', 'lld', 'ltg', 'lb', 'lua', 'lg', 'luo', 'lus', 'lv', 'mag', 'mai', 'ml', 'mr', 'min', 'min_l', 'mk', 'mt', 'mni', 'mos', 'mi', 'my', 'nl', 'nn', 'no', 'ne', 'ns', 'nus', 'nya', 'oc', 'or', 'pag', 'pa', 'pap', 'ps', 'fa', 'mg', 'pl', 'pt', 'prs', 'qu', 'ro', 'rn', 'ru', 'sg', 'sa', 'sat', 'scn', 'shn', 'si', 'sk', 'sl', 'sm', 'sn', 'sd', 'so', 'st', 'es', 'sc', 'sr', 'ss', 'su', 'sv', 'sw', 'szl', 'ta', 'tq', 'taq','tt', 'te', 'tg', 'tl', 'th', 'ti', 'tpi', 'tn', 'ts', 'tk', 'tum', 'tr', 'tw', 'tzm', 'ug', 'uk', 'umb', 'ur', 'uz', 'vec', 'vi', 'war', 'wo', 'xh', 'yi', 'yo', 'yue', 'zh', 'zh_TW', 'ms', 'zu', 'arg', 'arn', 'vl', 'zho']
 MAPPING_FLORES = {'ac':'ace_Arab', 'ace':'ace_Latn', 'acm':'acm_Arab', 'acq': 'acq_Arab', 'aeb':'aeb_Arab', 'af': 'afr_Latn', 'ajp':'ajp_Arab',
                   'sq': 'als_Latn', 'am': 'amh_Ethi', 'apc': 'apc_Arab', 'ar': 'arb_Arab', 'arb': 'arb_Latn', 'ars': 'ars_Arab', 
                   'ary': 'ary_Arab','arz': 'arz_Arab', 'as':'asm_Beng', 'ast': 'ast_Latn', 'awa': 'awa_Deva', 'ay': 'ayr_Latn', 
@@ -31,7 +30,7 @@ MAPPING_FLORES = {'ac':'ace_Arab', 'ace':'ace_Latn', 'acm':'acm_Arab', 'acq': 'a
                   'ks': 'kas_Arab', 'kas': 'kas_Deva', 'ka': 'kat_Geor', 'kk': 'kaz_Cyrl', 'kbp': 'kbp_Latn', 'kea': 'kea_Latn', 
                   'mn': 'khk_Cyrl', 'km': 'khm_Khmr', 'ki': 'kik_Latn', 'rw': 'kin_Latn', 'ky': 'kir_Cyrl', 'kmb': 'kmb_Latn', 
                   'kmr': 'kmr_Latn', 'kr': 'knc_Arab', 'knc': 'knc_Latn', 'kg': 'kon_Latn','ko': 'kor_Hang', 'lo': 'lao_Laoo', 
-                  'lij': 'lij_Latn', 'li': 'lim_Latn', 'ln': 'lin_Latn', 'lt': 'lit_Latn', 'lmo': 'lmo_Latn', 'ltg': 'ltg_Latn', 
+                  'lij': 'lij_Latn', 'li': 'lim_Latn', 'ln': 'lin_Latn', 'lt': 'lit_Latn', 'lld': 'lld_Latn', 'lmo': 'lmo_Latn', 'ltg': 'ltg_Latn', 
                   'lb': 'ltz_Latn', 'lua': 'lua_Latn', 'lg': 'lug_Latn', 'luo': 'luo_Latn', 'lus': 'lus_Latn', 'lv': 'lvs_Latn', 
                   'mag': 'mag_Deva', 'mai': 'mai_Deva', 'ml': 'mal_Mlym', 'mr': 'mar_Deva', 'min': 'min_Arab', 'min_l': 'min_Latn', 
                   'mk': 'mkd_Cyrl', 'mt': 'mlt_Latn', 'mni': 'mni_Beng', 'mos': 'mos_Latn', 'mi': 'mri_Latn', 'my': 'mya_Mymr', 
@@ -41,14 +40,14 @@ MAPPING_FLORES = {'ac':'ace_Arab', 'ace':'ace_Latn', 'acm':'acm_Arab', 'acq': 'a
                   'qu': 'quy_Latn', 'ro': 'ron_Latn', 'rn': 'run_Latn', 'ru': 'rus_Cyrl', 'sg': 'sag_Latn', 'sa': 'san_Deva', 
                   'sat': 'sat_Olck', 'scn': 'scn_Latn', 'shn': 'shn_Mymr', 'si': 'sin_Sinh', 'sk': 'slk_Latn', 'sl': 'slv_Latn', 
                   'sm': 'smo_Latn', 'sn': 'sna_Latn', 'sd': 'snd_Arab', 'so': 'som_Latn', 'st': 'sot_Latn', 'es': 'spa_Latn', 
-                  'sc': 'srd_Latn', 'sr': 'srp_Cyrl', 'ss': 'ssw_Latn', 'su': 'sun_Latn', 'sv': 'swe_Latn', 'sw': 'swh_Latn', 
+                  'sc': 'srd_Latn', 'sr': 'srp_Cyrl', 'sh': 'srp_Latn', 'ss': 'ssw_Latn', 'su': 'sun_Latn', 'sv': 'swe_Latn', 'sw': 'swh_Latn', 
                   'szl': 'szl_Latn', 'ta': 'tam_Taml', 'tq': 'taq_Latn', 'taq': 'taq_Tfng','tt': 'tat_Cyrl', 'te': 'tel_Telu', 
                   'tg': 'tgk_Cyrl', 'tl': 'tgl_Latn', 'th': 'tha_Thai', 'ti': 'tir_Ethi', 'tpi': 'tpi_Latn',  'tn': 'tsn_Latn', 
                   'ts': 'tso_Latn', 'tk': 'tuk_Latn', 'tum': 'tum_Latn', 'tr': 'tur_Latn', 'tw': 'twi_Latn', 'tzm': 'tzm_Tfng', 
                   'ug': 'uig_Arab', 'uk': 'ukr_Cyrl', 'umb': 'umb_Latn', 'ur': 'urd_Arab', 'uz': 'uzn_Latn', 'vec': 'vec_Latn', 
                   'vi': 'vie_Latn', 'war': 'war_Latn', 'wo': 'wol_Latn', 'xh': 'xho_Latn', 'yi': 'ydd_Hebr', 'yo': 'yor_Latn', 
-                  'yue': 'yue_Hant', 'zh': 'zho_Hans', 'zho': 'zho_Hant', 'ms': 'zsm_Latn', 'zu': 'zul_Latn', 'arg':'arg_Latn', 
-                  'arn':'arn_Latn', 'vl': 'val_Latn'}
+                  'yue': 'yue_Hant', 'zh': 'cmn_Hans', 'zh_TW': 'cmn_Hant', 'ms': 'zsm_Latn', 'zu': 'zul_Latn', 'arg':'arg_Latn', 
+                  'arn':'arn_Latn', 'vl': 'val_Latn', 'zho': 'zho_Hant'}
 
 
 task_definitions = []

@@ -9,9 +9,41 @@ dataset_paths = {
         "multilingual_holistic_bias": "data/multilingual_holistic_bias/multilingual_holistic_bias.py",
         "flores+_devtest_perturbations":"data/flores+_devtest_perturbations/flores+_devtest_perturbations.py",
         "geneval_single":"data/geneval_single/geneval_single.py",
-        "geneval_contextual":"data/geneval_contextual/geneval_contextual.py"
-}
+        "geneval_contextual":"data/geneval_contextual/geneval_contextual.py",
+        "geneval_contextual_trailing":"data/geneval_contextual_trailing/geneval_contextual_trailing.py",
+		"european_comission":"data/european_comission/european_comission.py",
+		"acpd_eval":"data/acpd_eval/acpd_eval.py",
+		"tacon":"data/tacon/tacon.py",
+		"cybersecurity":"data/cybersecurity/cybersecurity.py",
+		"aapp_ca-es":"data/aapp_ca-es/aapp_ca-es.py",
+		"aapp_ca-esn":"data/aapp_ca-en/aapp_ca-en.py",
+		"wmt19_biomed":"data/wmt19_biomed/wmt19_biomed.py",
+		"un_eval":"data/un_eval/un_eval.py",
+		"eupress":"data/eupress/eupress.py",
+		"wmt24pp":"data/wmt24pp/wmt24pp.py",
+		"abstracts":"data/abstracts/abstracts.py",
+		"act_single":"data/act_single/act_single.py",
+		"act_dev":"data/act_dev/act_dev.py",
+		"localization_xml_mt":"data/localization_xml_mt/localization_xml_mt.py",
+		"flores_val":"data/flores_val/flores_val.py",
+		"alia_eval":"data/alia_eval/alia_eval.py",
+  		"commonvoice_valencian":"data/commonvoice_valencian/commonvoice_valencian.py",
+		"acpd_eval":"data/acpd_eval/acpd_eval.py",
+		"tacon":"data/tacon/tacon.py",
+		"cybersecurity":"data/cybersecurity/cybersecurity.py",
+		"aapp_ca-es":"data/aapp_ca-es/aapp_ca-es.py",
+		"aapp_ca-en":"data/aapp_ca-en/aapp_ca-en.py",
+		"wmt19_biomed":"data/wmt19_biomed/wmt19_biomed.py",
+		"un_eval":"data/un_eval/un_eval.py",
+		"eupress":"data/eupress/eupress.py",
+		"bouquet_sent":"data/bouquet_sent/bouquet_sent.py",
+		"bouquet_paragraph":"data/bouquet_paragraph/bouquet_paragraph.py",
+		"polymath_question":"data/polymath_question/polymath_question.py",
+		"polymath_question_jsonl":"data/polymath_question_jsonl/polymath_question_jsonl.py",
+		"tier1_holdout":"data/tier1_holdout/tier1_holdout.py",
+		"tier1_holdout_sent":"data/tier1_holdout_sent/tier1_holdout_sent.py",
 
+  }
 def resolve_dataset_path(dataset_path):
     """Redirect known MT dataset names to their local loader scripts.
 

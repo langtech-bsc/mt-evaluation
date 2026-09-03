@@ -88,7 +88,7 @@ class HFLM(TemplateLM):
         batch_size: int | str | None = 1,
         max_batch_size: int | None = 64,
         trust_remote_code: bool | None = False,
-        use_fast_tokenizer: bool | None = True,
+        use_fast_tokenizer: bool | None = False,  # BSC: default differs from upstream
         add_bos_token: bool | None = None,
         prefix_token_id: int | None = None,
         # arguments used for splitting a model across GPUs naively.
@@ -929,7 +929,7 @@ class HFLM(TemplateLM):
         | None,
         revision: str | None = "main",
         trust_remote_code: bool | None = False,
-        use_fast_tokenizer: bool | None = True,
+        use_fast_tokenizer: bool | None = False,  # BSC: default differs from upstream
         gguf_file: str | None = None,
         add_bos_token: bool | None = None,
         subfolder: str | None = "",
@@ -1627,7 +1627,11 @@ class HFLM(TemplateLM):
             group_fn=lambda x: x[1],
         )
         chunks = re_ords.get_batched(n=batch_size, batch_fn=batch_fn)
-        eos = self.tok_decode(self.eot_token_id, skip_special_tokens=False)
+        # BSC: some tokenizers reject a bare int id
+        eos = self.tok_decode(
+            [self.eot_token_id] if isinstance(self.eot_token_id, int) else self.eot_token_id,
+            skip_special_tokens=False,
+        )
         for chunk in chunks:
             contexts, all_gen_kwargs = zip(*chunk, strict=True)
             # we assume all gen kwargs in the batch are the same
@@ -1638,7 +1642,17 @@ class HFLM(TemplateLM):
             )
             kwargs = normalize_gen_kwargs(gen_kwargs, self.max_gen_toks)
             # add EOS token to stop sequences
-            until = handle_stop_sequences(kwargs.pop("until", None), eos=eos)
+            # BSC MT: a task passing `until=[]` opts out of the newline stop
+            # sequences below (multi-paragraph MT sources contain newlines).
+            _requested_until = kwargs.pop("until", None)
+            explicit_no_stop = _requested_until == []
+            until = handle_stop_sequences(_requested_until, eos=eos)
+            until.append("</s>")
+            if not explicit_no_stop:
+                until.append("\n")
+                until.append("\n\n")
+            until.append("<end_of_turn>")  # gemma 2/3
+            until.append("<turn|>")  # gemma 4
             max_gen_toks = kwargs.pop("max_gen_toks")
 
             # set the max length in tokens of inputs ("context_enc")
@@ -1710,6 +1724,9 @@ class HFLM(TemplateLM):
                     else None,
                 )
                 res.append(s)
+                # BSC: log each generation so translation quality can be spot-checked
+                # while a long run is still in progress
+                eval_logger.info(s)
 
                 self.cache_hook.add_partial("generate_until", (context, gen_kwargs), s)
                 pbar.update(1)

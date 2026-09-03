@@ -23,13 +23,15 @@ mt_metrics:
     remove_whitespace: True
     eps_smoothing: False
   
+  # True
   comet:
     compute: True
     batch_size: 8
     checkpoint: "Unbabel/wmt22-comet-da"
-
+  
+  # True
   comet_kiwi:
-    compute: False
+    compute: True
     batch_size: 8 
     checkpoint: "Unbabel/wmt22-cometkiwi-da"
 
@@ -42,26 +44,32 @@ mt_metrics:
     compute: False
     batch_size: 8
     checkpoint: "Unbabel/XCOMET-XL"
-
+  # True
   bleurt:
-    compute: False
+    compute: True
     batch_size: 8
-    checkpoint: "lucadiliello/BLEURT-20-D12"
-
+    checkpoint: "/gpfs/projects/bsc88/hf-models/BLEURT-20"
+  # True
   metricx:
-    compute: False
-    checkpoint: "google/metricx-23-xl-v2p0"
-    tokenizer: "google/mt5-xl"
-
+    compute: True
+    checkpoint: "/gpfs/projects/bsc88/hf-models/google_metricx_23_xl_v2p0"
+    tokenizer: "/gpfs/projects/bsc88/hf-models/google_mt5_xl"
+  # True
   metricx_qe:
-    compute: False
-    checkpoint: "google/metricx-23-qe-xl-v2p0"
-    tokenizer: "google/mt5-xl"
+    compute: True
+    checkpoint: "/gpfs/projects/bsc88/hf-models/google_metricx_23_qe_xl_v2p0"
+    tokenizer: "/gpfs/projects/bsc88/hf-models/google_mt5_xl"
 
   mutox:
-    checkpoint: "cointegrated/SONAR_200_text_encoder"
+    checkpoint: "/gpfs/projects/bsc88/hf-models/sonar_encoder" # cointegrated/SONAR_200_text_encoder
     batch_size: 8
 
   detoxify:
-    compute: True
+    compute: False
     batch_size: 8
+
+  blonde:
+    compute: False
+
+  bleu_penalty:
+    compute: True

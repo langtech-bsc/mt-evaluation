@@ -23,14 +23,14 @@ MAPPING_FLORES = {'af': 'afr_Latn', 'am': 'amh_Ethi', 'ar': 'arb_Arab', 'ast': '
                   'id': 'ind_Latn', 'is': 'isl_Latn', 'it': 'ita_Latn', 'jv': 'jav_Latn', 'ja': 'jpn_Jpan', 'kn': 'kan_Knda', 
                   'ka': 'kat_Geor', 'kk': 'kaz_Cyrl', 'km': 'khm_Khmr', 'ko': 'kor_Hang', 'lo': 'lao_Laoo', 'ln': 'lin_Latn', 
                   'lt': 'lit_Latn', 'lb': 'ltz_Latn', 'lg': 'lug_Latn', 'lv': 'lvs_Latn', 'ml': 'mal_Mlym', 'mr': 'mar_Deva', 
-                  'mk': 'mkd_Cyrl', 'mg': 'plt_Latn', 'mn': 'khk_Cyrl', 'my': 'mya_Mymr', 'nl': 'nld_Latn', 'no': 'nob_Latn', 
+                  'mk': 'mkd_Cyrl', 'mg': 'plt_Latn', 'mn': 'khk_Cyrl', 'my': 'mya_Mymr', 'nl': 'nld_Latn', 'nb': 'nob_Latn', 
                   'ne': 'npi_Deva', 'ns': 'nso_Latn', 'oc': 'oci_Latn', 'or': 'ory_Orya', 'pa': 'pan_Guru', 'fa': 'pes_Arab', 
                   'pl': 'pol_Latn', 'pt': 'por_Latn', 'ps': 'pbt_Arab', 'ro': 'ron_Latn', 'ru': 'rus_Cyrl', 'si': 'sin_Sinh', 
                   'sk': 'slk_Latn', 'sl': 'slv_Latn', 'sd': 'snd_Arab', 'so': 'som_Latn', 'es': 'spa_Latn', 'sq': 'als_Latn', 
                   'sr': 'srp_Cyrl', 'ss': 'ssw_Latn', 'su': 'sun_Latn', 'sv': 'swe_Latn', 'sw': 'swh_Latn', 'ta': 'tam_Taml', 
                   'tl': 'tgl_Latn', 'th': 'tha_Thai', 'tn': 'tsn_Latn', 'tr': 'tur_Latn', 'uk': 'ukr_Cyrl', 'ur': 'urd_Arab', 
                   'uz': 'uzn_Latn', 'vi': 'vie_Latn', 'wo': 'wol_Latn', 'xh': 'xho_Latn', 'yi': 'ydd_Hebr', 'yo': 'yor_Latn', 
-                  'zh': 'zho_Hans', 'ms': 'zsm_Latn', 'zu': 'zul_Latn', 'mt': 'mlt_Latn', 'arg':'arg_Latn', 'arn':'arn_Latn'}
+                  'zh': 'cmn_Hans', 'ms': 'zsm_Latn', 'zu': 'zul_Latn', 'mt': 'mlt_Latn', 'arg':'arg_Latn', 'arn':'arn_Latn', 'nn': 'nno_Latn'}
 
 
 task_definitions = []

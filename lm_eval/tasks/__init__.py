@@ -30,6 +30,29 @@ from .flores_plus_devtest.task import *
 from .perturbations.task import *
 from .geneval_single.task import *
 from .geneval_contextual.task import *
+from .geneval_contextual_trailing.task import *
+from .european_comission.task import *
+from .acpd_eval.task import *
+from .tacon.task import *
+from .cybersecurity.task import *
+from .wmt19_biomed.task import *
+from .un_eval.task import *
+from .eupress.task import *
+from .aapp_ca_en.task import *
+from .aapp_ca_es.task import *
+from .wmt24pp.task import *
+from .abstracts.task import *
+from .act_single.task import *
+from .act_dev.task import *
+from .localization_xml_mt.task import *
+from .flores_val.task import *
+from .alia_eval.task import *
+from .commonvoice_valencian.task import *
+from .bouquet_sent.task import *
+from .bouquet_paragraph.task import *
+from .polymath_question.task import *
+from .polymath_question_jsonl.task import *
+from .tier1_holdout.task import *
 
 
 if TYPE_CHECKING:

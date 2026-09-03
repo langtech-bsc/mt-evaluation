@@ -35,41 +35,41 @@ class MULTILINGUAL_HOLISTIC_BIAS_TASK(MTask):
         res['chrfs_feminine'] = ( None )
         dict_aggregated['chrfs_feminine'] = self.chrfs_feminine
 
-        res['chrfs_masculine_segments'] = ( None )
-        dict_aggregated['chrfs_masculine_segments'] = self.chrfs_masculine_segments
+        #res['chrfs_masculine_segments'] = ( None )
+        #dict_aggregated['chrfs_masculine_segments'] = self.chrfs_masculine_segments
 
-        res['chrfs_feminine_segments'] = ( None )
-        dict_aggregated['chrfs_feminine_segments'] = self.chrfs_feminine_segments
+        #res['chrfs_feminine_segments'] = ( None )
+        #dict_aggregated['chrfs_feminine_segments'] = self.chrfs_feminine_segments
 
-        res['chrfs_both_segments'] = ( None )
-        dict_aggregated['chrfs_both_segments'] = self.chrfs_both_segments
+        #res['chrfs_both_segments'] = ( None )
+        #dict_aggregated['chrfs_both_segments'] = self.chrfs_both_segments
        
-        res['masculine_translation'] = ( None )
-        dict_aggregated['masculine_translation'] = self.masculine_translation
+        #res['masculine_translation'] = ( None )
+        #dict_aggregated['masculine_translation'] = self.masculine_translation
 
-        res['feminine_translation'] = ( None )
-        dict_aggregated['feminine_translation'] = self.feminine_translation
+        #res['feminine_translation'] = ( None )
+        #dict_aggregated['feminine_translation'] = self.feminine_translation
         
-        res['both_translation'] = ( None )
-        dict_aggregated['both_translation'] = self.both_translation
+        #res['both_translation'] = ( None )
+        #dict_aggregated['both_translation'] = self.both_translation
 
-        res['masculine_source'] = ( None )
-        dict_aggregated['masculine_source'] = self.masculine_source
+        #res['masculine_source'] = ( None )
+        #dict_aggregated['masculine_source'] = self.masculine_source
 
-        res['feminine_source'] = ( None )
-        dict_aggregated['feminine_source'] = self.feminine_source
+        #res['feminine_source'] = ( None )
+        #dict_aggregated['feminine_source'] = self.feminine_source
         
-        res['both_source'] = ( None )
-        dict_aggregated['both_source'] = self.both_source
+        #res['both_source'] = ( None )
+        #dict_aggregated['both_source'] = self.both_source
 
-        res['masculine_ref'] = ( None )
-        dict_aggregated['masculine_ref'] = self.masculine_ref
+        #res['masculine_ref'] = ( None )
+        #dict_aggregated['masculine_ref'] = self.masculine_ref
 
-        res['feminine_ref'] = ( None )
-        dict_aggregated['feminine_ref'] = self.feminine_ref
+        #res['feminine_ref'] = ( None )
+        #dict_aggregated['feminine_ref'] = self.feminine_ref
         
-        res['both_ref'] = ( None )
-        dict_aggregated['both_ref'] = self.both_ref
+        #res['both_ref'] = ( None )
+        #dict_aggregated['both_ref'] = self.both_ref
 
         self.res = res
         self.dict_aggregated = dict_aggregated

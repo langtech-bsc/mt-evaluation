@@ -111,7 +111,7 @@ class _MTask(MTask):
 
 dataset_name = 'perturbations'
 # TO DO: Add missing flores languages
-languages = ['bg', 'ca', 'eu', 'gl', 'cs', 'da', 'de', 'el', 'en', 'es', 'et', 'fi', 'fr', 'ga', 'hr', 'hu', 'it', 'lt', 'lv', 'mt', 'nl', 'pl', 'pt', 'ro', 'sk', 'sl', 'sv', 'zh', 'ast', 'arg', 'arn']
+languages = ['bg', 'ca', 'eu', 'gl', 'cs', 'cy', 'da', 'de', 'el', 'en', 'es', 'et', 'fi', 'fr', 'ga', 'hr', 'hu', 'it', 'lt', 'lv', 'mt', 'nl','oc','pl', 'pt', 'ro', 'ru','sk', 'sl', 'sr', 'sv', 'uk', 'zh', 'ast', 'arg', 'arn']
 
 MAPPING_FLORES = {'af': 'afr_Latn', 'am': 'amh_Ethi', 'ar': 'arb_Arab', 'ast': 'ast_Latn', 'az': 'azj_Latn', 'ba': 'bak_Cyrl', 
                   'be': 'bel_Cyrl', 'bn': 'ben_Beng', 'bs': 'bos_Latn', 'bg': 'bul_Cyrl', 'ca': 'cat_Latn', 'ceb': 'ceb_Latn', 
