@@ -1,12 +1,12 @@
 name: Sync with upstream lm-evaluation-harness
 
-# Checks weekly for a new upstream release and opens a pull request that merges
-# it. Conflicts do not stop the run: the PR is opened either way, with the
-# conflicting files listed so they can be resolved by hand.
+# Weekly, checks EleutherAI/lm-evaluation-harness for a new stable release.
+# A clean merge lands on the default branch automatically. A merge with
+# conflicts is pushed to a branch and opened as a PR for manual resolution.
 on:
   schedule:
     - cron: "0 6 * * 1"   # Mondays 06:00 UTC
-  workflow_dispatch:       # also runnable from the Actions tab
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -26,7 +26,7 @@ jobs:
           git remote add upstream https://github.com/EleutherAI/lm-evaluation-harness.git
           git fetch --tags upstream
 
-          # Newest tag that is a plain release: vX.Y.Z, no -dev / -rc suffix
+          # Newest plain release tag: vX.Y.Z, no -dev / -rc suffix
           TAG=$(git tag -l 'v*' --sort=-creatordate \
                 | grep -E '^v[0-9]+\.[0-9]+(\.[0-9]+)*$' | head -1)
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
@@ -39,84 +39,54 @@ jobs:
             echo "needed=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Merge it
-        if: steps.rel.outputs.needed == 'true'
-        id: merge
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git config merge.renameLimit 20000
-          git checkout -b "sync-upstream-${{ steps.rel.outputs.tag }}"
-
-          if git merge "${{ steps.rel.outputs.tag }}" --no-edit; then
-            echo "clean=true" >> "$GITHUB_OUTPUT"
-            echo "conflicts=" >> "$GITHUB_OUTPUT"
-            # The default GITHUB_TOKEN cannot push changes to .github/workflows/*,
-            # and this fork does not want upstream's CI anyway, so restore the
-            # workflow files to our version and drop them from the sync.
-            if ! git diff --quiet "origin/${{ github.ref_name }}" -- .github/workflows; then
-              git checkout "origin/${{ github.ref_name }}" -- .github/workflows
-              git commit -m "Keep the fork's own .github/workflows (skip upstream CI changes)"
-            fi
-          else
-            echo "clean=false" >> "$GITHUB_OUTPUT"
-            {
-              echo 'conflicts<<EOF'
-              git diff --name-only --diff-filter=U
-              echo EOF
-            } >> "$GITHUB_OUTPUT"
-            # Commit the conflict markers so the PR shows exactly what needs work
-            git add -A
-            git commit -m "Merge ${{ steps.rel.outputs.tag }} (WITH CONFLICTS - resolve before merging)"
-            # Same workflow-file restriction as above
-            if ! git diff --quiet "origin/${{ github.ref_name }}" -- .github/workflows; then
-              git checkout "origin/${{ github.ref_name }}" -- .github/workflows
-              git commit -m "Keep the fork's own .github/workflows (skip upstream CI changes)"
-            fi
-          fi
-
-      - name: Open the pull request
+      - name: Merge, or open a PR if it conflicts
         if: steps.rel.outputs.needed == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git push -u origin "sync-upstream-${{ steps.rel.outputs.tag }}" --force
+          set -e
+          BASE="${{ github.ref_name }}"
+          TAG="${{ steps.rel.outputs.tag }}"
+          BRANCH="sync-upstream-$TAG"
 
-          if [ "${{ steps.merge.outputs.clean }}" = "true" ]; then
-            TITLE="Sync with upstream ${{ steps.rel.outputs.tag }}"
-            BODY=$(cat <<'EOF'
-          Merged cleanly, but **do not merge on green alone**. Upstream changes
-          have silently altered behaviour before, so check at least:
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config merge.renameLimit 20000
 
-          - `lm_eval/models/huggingface.py` - the MT stop sequences, the
-            `use_fast_tokenizer` default and the per-generation logging
-          - `lm_eval/evaluator.py` / `evaluator_utils.py` - the `mt_kwargs`
-            plumbing and the stderr skip for neural metrics
-          - `lm_eval/api/task.py` - local dataset path resolution
-          - `lm_eval/tasks/__init__.py` - the MT task imports
+          # The default GITHUB_TOKEN cannot push changes under .github/workflows/,
+          # and this fork does not want upstream's CI, so drop upstream's workflow
+          # changes after any merge.
+          restore_workflows() {
+            if ! git diff --quiet "origin/$BASE" -- .github/workflows; then
+              git checkout "origin/$BASE" -- .github/workflows
+              git commit -m "Keep the fork's own .github/workflows (skip upstream CI changes)"
+            fi
+          }
 
-          Then run one language pair end to end and compare the metrics against a
-          stored result. BLEU/chrF/TER should match closely; a jump in COMET,
-          BLEURT or MetricX means something moved.
-          EOF
-          )
+          if git merge "$TAG" --no-edit; then
+            # Clean merge -> land it on the default branch directly.
+            restore_workflows
+            git push origin "HEAD:$BASE"
+            echo "Clean merge of $TAG pushed to $BASE."
           else
-            TITLE="Sync with upstream ${{ steps.rel.outputs.tag }} (conflicts)"
-            BODY=$(cat <<EOF
-          The merge hit conflicts and the markers are committed as-is, so this
-          branch does **not** build. Resolve these files, then push to the branch:
+            # Conflicts -> commit markers on a branch and open a PR to resolve.
+            git merge --abort
+            git checkout -B "$BRANCH"
+            git merge "$TAG" --no-edit || true
+            git add -A
+            git commit -m "Merge $TAG (WITH CONFLICTS - resolve before merging)"
+            restore_workflows
+            git push -u origin "$BRANCH" --force
 
-          \`\`\`
-          ${{ steps.merge.outputs.conflicts }}
-          \`\`\`
-
-          Rule of thumb from the v0.4.12 sync: for files upstream rewrote, take
-          their version and re-apply our changes on top rather than keeping ours.
-          EOF
-          )
+            CONFLICTS=$(git diff "origin/$BASE"...HEAD --name-only --diff-filter=U 2>/dev/null || true)
+            BODY=$(printf '%s\n' \
+              "Merging upstream $TAG hit conflicts, and the markers are committed as-is," \
+              "so this branch does **not** build. Resolve the conflicting files, then push" \
+              "to the branch." \
+              "" \
+              "Rule of thumb from the v0.4.12 sync: for files upstream rewrote, take their" \
+              "version and re-apply our changes on top rather than keeping ours.")
+            gh pr create --title "Sync with upstream $TAG (conflicts)" \
+              --body "$BODY" --base "$BASE" --head "$BRANCH" \
+              || echo "A PR for this branch already exists; branch updated in place."
           fi
-
-          gh pr create --title "$TITLE" --body "$BODY" \
-            --base "${{ github.ref_name }}" \
-            --head "sync-upstream-${{ steps.rel.outputs.tag }}" \
-            || echo "A pull request for this branch already exists; the branch was updated in place."
