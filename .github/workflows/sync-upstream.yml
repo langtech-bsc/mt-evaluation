@@ -80,7 +80,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git push -u origin "sync-upstream-${{ steps.rel.outputs.tag }}"
+          git push -u origin "sync-upstream-${{ steps.rel.outputs.tag }}" --force
 
           if [ "${{ steps.merge.outputs.clean }}" = "true" ]; then
             TITLE="Sync with upstream ${{ steps.rel.outputs.tag }}"
@@ -118,4 +118,5 @@ jobs:
 
           gh pr create --title "$TITLE" --body "$BODY" \
             --base "${{ github.ref_name }}" \
-            --head "sync-upstream-${{ steps.rel.outputs.tag }}"
+            --head "sync-upstream-${{ steps.rel.outputs.tag }}" \
+            || echo "A pull request for this branch already exists; the branch was updated in place."
