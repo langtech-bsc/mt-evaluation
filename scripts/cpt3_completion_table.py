@@ -31,7 +31,7 @@ import statistics as st
 import sys
 from collections import defaultdict
 
-RESULTS_ROOT = "/gpfs/projects/bsc88/mt_translation/mt-evaluation/results"
+RESULTS_ROOT = os.environ.get("RESULTS_ROOT", "results")
 ARMS = ["base", "treatment", "control", "pseudo"]
 PREFIX = "salamandraTA_2B_v2_"
 

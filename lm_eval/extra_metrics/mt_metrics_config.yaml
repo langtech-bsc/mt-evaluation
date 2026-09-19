@@ -48,20 +48,20 @@ mt_metrics:
   bleurt:
     compute: True
     batch_size: 8
-    checkpoint: "/gpfs/projects/bsc88/hf-models/BLEURT-20"
+    checkpoint: "${MT_MODELS_DIR}/BLEURT-20"
   # True
   metricx:
     compute: True
-    checkpoint: "/gpfs/projects/bsc88/hf-models/google_metricx_23_xl_v2p0"
-    tokenizer: "/gpfs/projects/bsc88/hf-models/google_mt5_xl"
+    checkpoint: "${MT_MODELS_DIR}/google_metricx_23_xl_v2p0"
+    tokenizer: "${MT_MODELS_DIR}/google_mt5_xl"
   # True
   metricx_qe:
     compute: True
-    checkpoint: "/gpfs/projects/bsc88/hf-models/google_metricx_23_qe_xl_v2p0"
-    tokenizer: "/gpfs/projects/bsc88/hf-models/google_mt5_xl"
+    checkpoint: "${MT_MODELS_DIR}/google_metricx_23_qe_xl_v2p0"
+    tokenizer: "${MT_MODELS_DIR}/google_mt5_xl"
 
   mutox:
-    checkpoint: "/gpfs/projects/bsc88/hf-models/sonar_encoder" # cointegrated/SONAR_200_text_encoder
+    checkpoint: "${MT_MODELS_DIR}/sonar_encoder" # cointegrated/SONAR_200_text_encoder
     batch_size: 8
 
   detoxify:

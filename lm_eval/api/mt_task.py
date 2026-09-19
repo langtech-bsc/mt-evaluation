@@ -409,6 +409,11 @@ class MTask(ConfigurableTask):
 
         metric_configs = {}
         for metric_name, metric_info in mt_metrics.items():
+            # checkpoint/tokenizer may use ${MT_MODELS_DIR} so no cluster-specific
+            # path is committed; expand from the environment.
+            for key in ("checkpoint", "tokenizer"):
+                if isinstance(metric_info.get(key), str):
+                    metric_info[key] = os.path.expandvars(metric_info[key])
             metric_configs[metric_name] = metric_info
 
         if os.environ.get("MT_DEFER_NEURAL_METRICS") == "1":

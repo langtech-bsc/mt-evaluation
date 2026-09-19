@@ -1,0 +1,69 @@
+#!/bin/bash
+# Example SLURM launcher for the two-stage MT pipeline (scripts/run_mt_v3.sh).
+# Copy this file, fill in the <PLACEHOLDERS>, and submit with `sbatch`.
+# It generates translations + surface metrics in the Transformers-5 env, then
+# scores neural metrics in the Transformers-4 env. See V3_README.md.
+#SBATCH --job-name=flores_eval
+#SBATCH --output=slurm_logs/%x_%j.out
+#SBATCH --error=slurm_logs/%x_%j.err
+#SBATCH --gres=gpu:1
+#SBATCH -c 20
+#SBATCH -N 1
+#SBATCH --time=02:00:00
+# #SBATCH --account <YOUR_ACCOUNT>
+# #SBATCH -q <YOUR_QUEUE>
+
+set -euo pipefail
+
+# --- repository + environments -----------------------------------------------
+cd "<PATH_TO_MT_EVALUATION_REPO>"
+
+export GEN_PYTHON="$PWD/venv-v5/bin/python"           # Transformers 5 (generation)
+export METRIC_PYTHON="$PWD/venv-neural-v4/bin/python"  # Transformers 4 (neural scoring)
+
+# Modules loaded per stage (edit for your cluster; comment out if not using Lmod).
+export GEN_MODULES="<GEN_MODULES>"
+export METRIC_MODULES="<METRIC_MODULES>"
+
+# Directory holding the local metric checkpoints (BLEURT-20, google_mt5_xl,
+# google_metricx_23_xl_v2p0, google_metricx_23_qe_xl_v2p0). Referenced as
+# ${MT_MODELS_DIR} in lm_eval/extra_metrics/mt_metrics_config.yaml.
+export MT_MODELS_DIR="<PATH_TO_METRIC_MODELS>"
+
+# HuggingFace cache (optional; set for offline clusters).
+export HF_HOME="<PATH_TO_HF_CACHE>"
+export HF_HUB_OFFLINE=1
+export TRANSFORMERS_OFFLINE=1
+export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
+
+mkdir -p slurm_logs
+
+# --- what to translate -------------------------------------------------------
+model="<PATH_OR_HF_ID_OF_THE_MODEL>"
+model_name_dir="my_model"
+prompt_style="<PROMPT_STYLE>"     # e.g. an entry in lm_eval/prompts/mt_prompts.yaml
+batch_size=7
+num_fewshot=0
+verbosity="INFO"
+
+# "src_flores:tgt_flores:src_abbr:tgt_abbr"
+declare -a language_pairs=(
+    "eng_Latn:spa_Latn:en:es"
+    "eng_Latn:zho_Hans:en:zh"
+    "spa_Latn:eng_Latn:es:en"
+)
+
+for pair in "${language_pairs[@]}"; do
+    IFS=':' read -r src_language tgt_language src_abrv tgt_abrv <<< "$pair"
+
+    output_dir="results/${model_name_dir}/results_${src_abrv}_${tgt_abrv}_flores+_devtest.json"
+
+    bash scripts/run_mt_v3.sh "$output_dir" --model hf \
+        --model_args "pretrained=${model},trust_remote_code=True,dtype=bfloat16" \
+        --tasks "${src_abrv}_${tgt_abrv}_flores+_devtest" \
+        --num_fewshot "$num_fewshot" \
+        --batch_size "$batch_size" \
+        --verbosity "$verbosity" \
+        --translation_kwargs "src_language=${src_language},tgt_language=${tgt_language},prompt_style=${prompt_style}" \
+        --gen_kwargs "max_gen_toks=800,num_beams=5"
+done

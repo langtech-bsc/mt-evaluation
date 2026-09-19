@@ -1,4 +1,7 @@
 # Install with: python -m pip install -e . -r requirements-generation-v5.txt
 transformers>=5,<6
-# GPFS tasks still use dataset scripts.
+# Local dataset scripts are loaded from ./data (see lm_eval/api/dataset_paths.py).
 datasets>=2.16,<4
+# Japanese / Korean BLEU & TER need the mecab tokenizers (ja-mecab / ko-mecab).
+sacrebleu[ja]
+sacrebleu[ko]

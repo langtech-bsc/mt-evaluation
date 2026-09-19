@@ -2,6 +2,8 @@
 set -euo pipefail
 : "${GEN_PYTHON:?Set GEN_PYTHON to the v5 environment python}"
 : "${METRIC_PYTHON:?Set METRIC_PYTHON to the v4 environment python}"
+: "${MT_MODELS_DIR:?Set MT_MODELS_DIR to the directory holding the metric checkpoints (BLEURT-20, google_mt5_xl, google_metricx_23_xl_v2p0, google_metricx_23_qe_xl_v2p0)}"
+export MT_MODELS_DIR
 : "${GEN_MODULES:=intel impi mkl hdf5 python/3.12.1}"
 : "${METRIC_MODULES:=intel impi mkl hdf5 python/3.11.5-gcc}"
 

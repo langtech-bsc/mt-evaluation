@@ -45,10 +45,13 @@ def extract_tasks(payload):
 def compute(name, config, sources, targets, translations):
     module, cls = METRICS[name]
     factory = getattr(importlib.import_module(f'neural_scoring.legacy_metrics.{module}.metric'), cls)
+    # checkpoint/tokenizer paths may use ${MT_MODELS_DIR} so no cluster-specific
+    # absolute path is committed; expand it from the environment here.
+    checkpoint = os.path.expandvars(config['checkpoint'])
     if name.startswith('metricx'):
-        model = factory(config['tokenizer'], config['checkpoint'])
+        model = factory(os.path.expandvars(config['tokenizer']), checkpoint)
         return model.evaluate(sources=sources, hypotheses=translations, references=targets)
-    model = factory(config['checkpoint'])
+    model = factory(checkpoint)
     batch = config.get('batch_size', 8)
     if name == 'bleurt':
         return model.evaluate(translations, targets, batch)
