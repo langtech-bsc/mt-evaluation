@@ -1,0 +1,26 @@
+[
+  {
+    "file": "lm_eval/extra_metrics/metricx/metric.py",
+    "identical_to_bsc_original": true
+  },
+  {
+    "file": "lm_eval/extra_metrics/metricx/models.py",
+    "identical_to_bsc_original": true
+  },
+  {
+    "file": "lm_eval/extra_metrics/bleurt/metric.py",
+    "identical_to_bsc_original": true
+  },
+  {
+    "file": "lm_eval/extra_metrics/comet/metric.py",
+    "identical_to_bsc_original": true
+  },
+  {
+    "file": "lm_eval/extra_metrics/comet_kiwi/metric.py",
+    "identical_to_bsc_original": true
+  },
+  {
+    "file": "lm_eval/extra_metrics/xcomet/metric.py",
+    "identical_to_bsc_original": true
+  }
+]

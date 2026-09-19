@@ -1,0 +1,12 @@
+# Starting constraints; use your validated v1 lockfile for exact score reproduction.
+# Install in a separate Python 3.10/3.11 environment, without pip install -e .
+transformers==4.53.3
+numpy<2
+datasets>=2.16,<4
+sentencepiece
+protobuf
+PyYAML
+torch
+unbabel-comet==2.2.7
+bleurt-pytorch==0.0.1
+setuptools==80.9.0

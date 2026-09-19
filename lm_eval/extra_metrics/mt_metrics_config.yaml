@@ -10,7 +10,7 @@ mt_metrics:
 
   ter:
     compute: True
-    normalized: False
+    normalized: True
     no_punct: False
     asian_support: False
     case_sensitive: False

@@ -1,7 +1,7 @@
 from lm_eval.api.registry import register_task
-from lm_eval.api.mt_task import MTask
+from lm_eval.api.mt_task import MTask, _optional
 import sacrebleu
-from lm_eval.extra_metrics.comet.metric import BaseCOMET
+(BaseCOMET,) = _optional("lm_eval.extra_metrics.comet.metric", "BaseCOMET")
 
 
 class _MTask(MTask):

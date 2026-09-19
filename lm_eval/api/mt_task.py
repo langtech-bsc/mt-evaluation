@@ -1,4 +1,5 @@
 import importlib
+import os
 import numpy as np
 
 
@@ -10,25 +11,13 @@ def _optional(module_path, *names):
     whole framework from importing, so failures are deferred until the metric
     is actually used.
     """
-    try:
-        module = importlib.import_module(module_path)
-        return tuple(getattr(module, name) for name in names)
-    except Exception as exc:  # ImportError, or a transformers API mismatch
-        # Python clears the `except ... as` name at the end of the block, so the
-        # message has to be built now rather than inside the closure.
-        detail = f"{type(exc).__name__}: {exc}"
+    def factory(name):
+        def create(*args, **kwargs):
+            module = importlib.import_module(module_path)
+            return getattr(module, name)(*args, **kwargs)
+        return create
 
-        def _make_stub(name):
-            def _unavailable(*args, **kwargs):
-                raise RuntimeError(
-                    f"Metric '{name}' is unavailable: importing {module_path} failed "
-                    f"({detail}). Either turn it off in "
-                    "lm_eval/extra_metrics/mt_metrics_config.yaml or fix the dependency."
-                )
-
-            return _unavailable
-
-        return tuple(_make_stub(name) for name in names)
+    return tuple(factory(name) for name in names)
 
 
 (BLEURT,) = _optional("lm_eval.extra_metrics.bleurt.metric", "BLEURT")
@@ -411,7 +400,7 @@ class MTask(ConfigurableTask):
         return sources
 
     def load_yaml_config(self):
-        YAML_PATH = './lm_eval/extra_metrics/mt_metrics_config.yaml'
+        YAML_PATH = os.environ.get('MT_METRICS_CONFIG', './lm_eval/extra_metrics/mt_metrics_config.yaml')
         
         with open(YAML_PATH, 'r') as file:
             config = yaml.safe_load(file)
@@ -422,6 +411,10 @@ class MTask(ConfigurableTask):
         for metric_name, metric_info in mt_metrics.items():
             metric_configs[metric_name] = metric_info
 
+        if os.environ.get("MT_DEFER_NEURAL_METRICS") == "1":
+            for name in ("comet", "comet_kiwi", "bleurt", "xcomet", "xcomet_qe",
+                         "metricx", "metricx_qe"):
+                metric_configs.setdefault(name, {})["compute"] = False
         self.metric_configs = metric_configs
 
     def create_dicts(self, source, target, result):
@@ -652,6 +645,9 @@ class MTask(ConfigurableTask):
     ) -> None:
         """Build a set of Instances for a task, and store them in task.instances"""
 
+        # Selected documents must never reuse requests cached for another selection.
+        if samples is not None:
+            cache_requests = False
         self.load_yaml_prompts()
 
         # used with caching
@@ -694,7 +690,7 @@ class MTask(ConfigurableTask):
             limit = None
 
         doc_id_docs = list(
-            self.doc_iterator(rank=rank, limit=limit, world_size=world_size)
+            self.doc_iterator(rank=rank, limit=limit, world_size=world_size, samples=samples)
         )
 
         num_docs = len(doc_id_docs)

@@ -1,0 +1,4 @@
+# Install with: python -m pip install -e . -r requirements-generation-v5.txt
+transformers>=5,<6
+# GPFS tasks still use dataset scripts.
+datasets>=2.16,<4

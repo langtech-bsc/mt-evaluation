@@ -1170,10 +1170,63 @@ class HFLM(TemplateLM):
 
         if do_sample is False and temp == 0.0:
             generation_kwargs.pop("temperature", None)
-        # build stopping criteria
-        stopping_criteria = stop_sequences_criteria(
-            self.tokenizer, stop, context.shape[1], context.shape[0]
-        )
+        # --- stop handling (beam-search safe) ---
+        # lm-eval's string stopping criteria (stop_sequences_criteria) keeps a
+        # per-sequence `done_tracker` sized to batch_size. Under beam search
+        # generate() runs batch_size * num_beams rows, so that tracker is
+        # mis-indexed and returns all-done prematurely, halting the whole batch
+        # and truncating unfinished translations (observed ~10% of outputs cut
+        # mid-sentence at num_beams=5). Fix:
+        #   (a) register every single-token stop string as an eos id, so HF
+        #       stops each beam natively and correctly; and
+        #   (b) only attach the string criteria for greedy/sampling
+        #       (num_beams == 1), where its batch_size sizing is correct.
+        # Multi-token stops (e.g. "\n\n") are still removed in post-processing.
+        num_beams = generation_kwargs.get("num_beams", 1) or 1
+
+        eos_ids = []
+        if self.tokenizer.eos_token_id is not None:
+            eos_ids.append(self.tokenizer.eos_token_id)
+        # the harness' canonical end-of-turn id (may differ from tokenizer eos,
+        # e.g. SalamandraTA emits <|im_end|> while tokenizer eos is </s>); this
+        # guarantees generation stops at the real end of turn even for
+        # document-level tasks that pass until=[] (no newline stops).
+        eot = self.eot_token_id
+        if eot is not None:
+            eos_ids.extend(eot if isinstance(eot, (list, tuple)) else [eot])
+        # Well-known assistant turn-end markers. Registered as eos ONLY when the
+        # current model's tokenizer maps them to a single token, so this is
+        # model-agnostic (non-existent markers are skipped). This guarantees the
+        # real end of turn stops generation even for document-level tasks
+        # (until=[]) where the newline stops are intentionally absent, and for
+        # chat models (e.g. SalamandraTA/Qwen <|im_end|>, Llama-3 <|eot_id|>,
+        # Gemma <end_of_turn>) whose turn-end token differs from tokenizer.eos.
+        turn_end_markers = [
+            "<|im_end|>", "<|eot_id|>", "<end_of_turn>", "<turn|>",
+            "<|end|>", "<|endoftext|>", "</s>",
+        ]
+        for s in list(stop) + turn_end_markers:
+            try:
+                ids = self.tokenizer.encode(s, add_special_tokens=False)
+            except Exception:
+                ids = []
+            if len(ids) == 1:  # only single-token stops can act as eos
+                eos_ids.append(ids[0])
+        existing_eos = generation_kwargs.pop("eos_token_id", None)
+        if existing_eos is not None:
+            eos_ids.extend(
+                existing_eos if isinstance(existing_eos, (list, tuple)) else [existing_eos]
+            )
+        if eos_ids:
+            generation_kwargs["eos_token_id"] = sorted({int(i) for i in eos_ids})
+
+        # string criteria is only correct (and only needed) for greedy/sampling
+        stopping_criteria = None
+        if num_beams == 1:
+            stopping_criteria = stop_sequences_criteria(
+                self.tokenizer, stop, context.shape[1], context.shape[0]
+            )
+
         with torch.autocast(
             device_type=self.device.type,
             dtype=self.mixed_precision_dtype,

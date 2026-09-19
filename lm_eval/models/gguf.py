@@ -51,16 +51,17 @@ class GGUFLM(LM):
                 prompt = context
                 request = {
                     "prompt": prompt,
-                    "logprobs": self.logprobs,
+                    "max_tokens": int(kwargs.get("max_tokens", 800)),
+                    "seed": 1234,
                     "temperature": self.temperature,
                 }
                 if continuation:
                     prompt += continuation
-                    request.update({"prompt": prompt, "max_tokens": 1, "echo": True})
-                if stop is not None:
+                    request.update({"prompt": prompt, "max_tokens": 1, "echo": True, "logprobs": self.logprobs})
+                if stop:
                     request["stop"] = stop
                 response = requests.post(
-                    f"{self.base_url}/v1/completions", json=request
+                    f"{self.base_url}/v1/completions", json=request, timeout=(10, 1800)
                 )
                 response.raise_for_status()
                 return response.json()
@@ -110,7 +111,10 @@ class GGUFLM(LM):
             inp = request[0]
             request_args = request[1]
             until = request_args.get("until", ["</s>"])
-            response = self.gguf_completion(context=inp, stop=until)
+            if request_args.get("num_beams", 1) != 1 or request_args.get("do_sample", False):
+                raise ValueError("This GGUF adapter uses greedy decoding; use num_beams=1, do_sample=False")
+            max_tokens = request_args.get("max_gen_toks", request_args.get("max_new_tokens", 800))
+            response = self.gguf_completion(context=inp, stop=until, max_tokens=max_tokens)
             if response and "choices" in response and response["choices"]:
                 choice = response["choices"][0]
                 if "text" in choice:
@@ -120,10 +124,10 @@ class GGUFLM(LM):
                     logger.error(
                         f"Invalid response for greedy_until. Response: {response}"
                     )
-                    res.append(None)  # Add default value in case of error
+                    raise RuntimeError("GGUF response has no text")
             else:
                 logger.error(f"Invalid response for greedy_until. Response: {response}")
-                res.append(None)  # Add default value in case of error
+                raise RuntimeError("GGUF response has no choices")
         return res
 
     def loglikelihood_rolling(self, requests, disable_tqdm: bool = False):

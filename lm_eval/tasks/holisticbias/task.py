@@ -1,10 +1,10 @@
 from lm_eval.api.registry import register_task
-from lm_eval.api.mt_task import MTask
+from lm_eval.api.mt_task import MTask, _optional
 
-from lm_eval.extra_metrics.toxicity.etox import etox_single
-from lm_eval.extra_metrics.mutox.loader import MUTOX
-from lm_eval.extra_metrics.comet_kiwi.metric import COMETKiwi
-from lm_eval.extra_metrics.detoxify.metric import BaseDetoxify
+(etox_single,) = _optional("lm_eval.extra_metrics.toxicity.etox", "etox_single")
+(MUTOX,) = _optional("lm_eval.extra_metrics.mutox.loader", "MUTOX")
+(COMETKiwi,) = _optional("lm_eval.extra_metrics.comet_kiwi.metric", "COMETKiwi")
+(BaseDetoxify,) = _optional("lm_eval.extra_metrics.detoxify.metric", "BaseDetoxify")
 
 import pandas as pd
 
