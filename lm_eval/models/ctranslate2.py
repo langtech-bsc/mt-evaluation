@@ -87,12 +87,25 @@ class Fairseq(CTranslateMAIN):
         path_converted_model = os.path.join(PATH_CTRANSLATE_MODELS, model_name)
 
         if not os.path.exists(path_converted_model):
-            os.system(f"ct2-fairseq-converter --model_path {model_fairseq} --data_dir {data_dir} --output_dir {path_converted_model}")
+            # Fairseq checkpoints store an argparse.Namespace, which torch>=2.6
+            # refuses to unpickle under its new default weights_only=True; the
+            # converter needs --unsafe_deserialization to read them.
+            rc = os.system(
+                f"ct2-fairseq-converter --unsafe_deserialization "
+                f"--model_path {model_fairseq} --data_dir {data_dir} "
+                f"--output_dir {path_converted_model}"
+            )
+            if rc != 0 or not os.path.exists(path_converted_model):
+                raise RuntimeError(
+                    f"ct2-fairseq-converter failed for '{model_name}' (exit {rc}). "
+                    "Check that fairseq and ctranslate2 are installed in this env "
+                    "and that the checkpoint is readable."
+                )
 
             # Move spm_path to path_converted_model
             spm_dest_path = os.path.join(path_converted_model, 'spm.model')
             shutil.copy(spm_path, spm_dest_path)
-            
+
         else:
             eval_logger.info(f"Model already converted to ctranslate2. Re-using converted model: {path_converted_model}")
         super().__init__(path_converted_model)
