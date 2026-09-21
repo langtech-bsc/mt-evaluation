@@ -15,7 +15,9 @@ class CTranslateMAIN(LM):
     An abstracted Ctranslate model class.
     """
 
-    def __init__(self, model, batch_size=1) -> None:
+    def __init__(self, model, batch_size=1, **kwargs) -> None:
+        # The harness injects device/max_batch_size into every backend; this
+        # model selects its own device below, so extra kwargs are ignored.
         super().__init__()
         eval_logger.info(f"Cuda Available? {torch.cuda.is_available()}")
         self._device = (
@@ -69,8 +71,8 @@ class CTranslateMAIN(LM):
 @register_model("ctranslate")
 class CTranslate(CTranslateMAIN):
 
-    def __init__(self, model, batch_size=1) -> None:
-        super().__init__(model, batch_size)
+    def __init__(self, model, batch_size=1, **kwargs) -> None:
+        super().__init__(model, batch_size, **kwargs)
 
 @register_model("fairseq")
 class Fairseq(CTranslateMAIN):
@@ -79,7 +81,7 @@ class Fairseq(CTranslateMAIN):
     to CTranslate. This class, inherits from the CTranslate class
     """
 
-    def __init__(self, model_name, model_fairseq, data_dir, spm_path, batch_size=1) -> None:
+    def __init__(self, model_name, model_fairseq, data_dir, spm_path, batch_size=1, **kwargs) -> None:
 
         PATH_CTRANSLATE_MODELS = './ctranslate_models'
         path_converted_model = os.path.join(PATH_CTRANSLATE_MODELS, model_name)
