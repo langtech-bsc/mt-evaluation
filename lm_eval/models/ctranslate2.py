@@ -1,5 +1,5 @@
 import random
-from lm_eval import utils
+from lm_eval.models import utils
 from lm_eval.api.model import LM
 from lm_eval.api.registry import register_model
 import ctranslate2
