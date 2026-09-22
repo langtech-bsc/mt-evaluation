@@ -5,7 +5,7 @@ set -euo pipefail
 : "${MT_MODELS_DIR:?Set MT_MODELS_DIR to the directory holding the metric checkpoints (BLEURT-20, google_mt5_xl, google_metricx_23_xl_v2p0, google_metricx_23_qe_xl_v2p0)}"
 export MT_MODELS_DIR
 : "${GEN_MODULES:=intel impi mkl hdf5 python/3.12.1}"
-: "${METRIC_MODULES:=intel impi mkl hdf5 python/3.11.5-gcc}"
+: "${METRIC_MODULES:=EB/apps Python/3.10.8-GCCcore-12.2.0}"
 
 if (( $# < 2 )); then
     echo 'Usage: run_mt_v3.sh OUTPUT.json [lm_eval arguments]' >&2
@@ -58,6 +58,9 @@ fi
 
 (
     load_stage_modules "$METRIC_MODULES"
+    # torch>=2.6 defaults torch.load to weights_only=True; allow the neural
+    # metric checkpoints (BLEURT/MetricX/COMET) to load as before.
+    export TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1
     "$METRIC_PYTHON" -c 'import sys, torch, transformers; print(sys.executable, sys.version, transformers.__version__, torch.__version__, flush=True); assert transformers.__version__.split(".")[0] == "4", "Scoring requires Transformers v4"'
     "$METRIC_PYTHON" -m neural_scoring.score --input "$output" --validate-only
     "$METRIC_PYTHON" -m neural_scoring.score --input "$output" \
