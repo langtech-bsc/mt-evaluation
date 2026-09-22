@@ -14,7 +14,9 @@ class SimpleSentenceGenerator(LM):
     A simple class that loads sentences from a file
     and uses them for generating responses.
     """
-    def __init__(self, model_name, sentence_file_path, batch_size=1):
+    def __init__(self, model_name, sentence_file_path, batch_size=1, **kwargs):
+        # The harness injects device/max_batch_size into every backend; this
+        # model reads sentences from a file, so the extras are ignored.
         super().__init__()
 
         path_translation = sentence_file_path
