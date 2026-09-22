@@ -42,6 +42,7 @@ load_stage_modules() {
     read -r -a requested_modules <<< "$module_names"
     module load "${requested_modules[@]}" || return 1
     unset PYTHONHOME PYTHONPATH
+    export PYTHONNOUSERSITE=1   # keep ~/.local out; the venv must be self-contained
     set -u
 }
 
