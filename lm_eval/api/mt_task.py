@@ -352,11 +352,14 @@ class MTask(ConfigurableTask):
         return segment_scores
     
     def chrf_segments(self, arr):
+        kwargs = self.metric_configs['chrf'].copy()
+        del kwargs['compute']
+
         targets = [i[0] for i in arr]
         translations = [i[1] for i in arr]
         segment_scores = []
         for h, r in zip(translations, targets):
-            segment_score = sacrebleu.corpus_chrf([h], [[r]])
+            segment_score = sacrebleu.corpus_chrf([h], [[r]], **kwargs)
             segment_scores.append(segment_score.score)
         return segment_scores
 

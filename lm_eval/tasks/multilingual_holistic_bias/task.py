@@ -1,7 +1,7 @@
 from lm_eval.api.registry import register_task
 from lm_eval.api.mt_task import MTask
 
-from sacrebleu.metrics import METRICS as sacreBLEU_metrics
+from sacrebleu import sentence_chrf
 
 import pandas as pd
 import json
@@ -123,15 +123,13 @@ class MULTILINGUAL_HOLISTIC_BIAS_TASK(MTask):
 
     def get_chrf_and_segments(self, translations, refs, kwargs):
 
-        scorer = sacreBLEU_metrics["CHRF"]()
         segment_scores = []
        
         for h, r in zip(translations, refs):
             
             try:
-                score = scorer.sentence_score(h, r)
-                score_in_json = json.loads(score.format(signature=str(scorer.get_signature()), is_json=True))
-                segment_score = score_in_json["score"]
+                # chrF settings come from mt_metrics_config.yaml, as for the other tasks
+                segment_score = sentence_chrf(h, r, **kwargs).score
 
                 segment_scores.append(segment_score)
             except:
