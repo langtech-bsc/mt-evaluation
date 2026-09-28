@@ -138,7 +138,9 @@ class MULTILINGUAL_HOLISTIC_BIAS_TASK(MTask):
                 print('Omitting references: ', r)
                 pass
             
-        score = sum(segment_scores) / len(segment_scores)
+        # A gender group can be empty on a subset (e.g. --limit); report no score
+        # for it instead of failing the whole task.
+        score = sum(segment_scores) / len(segment_scores) if segment_scores else None
         return score, segment_scores
 
     def chrfs_masculine(self, aux=None):
