@@ -4,6 +4,20 @@ import sacrebleu
 (BaseCOMET,) = _optional("lm_eval.extra_metrics.comet.metric", "BaseCOMET")
 
 
+# 3 perturbation types x 5 noise levels, each a block of the same segments in
+# order (see the flores+_devtest_perturbations loader). Blocks hold 1012 segments
+# on the full set, or fewer when a subset is selected with --samples.
+N_BLOCKS = 15
+
+
+def _block_size(arr):
+    assert len(arr) % N_BLOCKS == 0, (
+        f"perturbations expects {N_BLOCKS} equal blocks, got {len(arr)} outputs; "
+        "select the same segments from every block (--samples), not --limit"
+    )
+    return len(arr) // N_BLOCKS
+
+
 class _MTask(MTask):
     VERSION = 1
     DATASET_PATH = "flores+_devtest_perturbations"
@@ -33,15 +47,16 @@ class _MTask(MTask):
         self.dict_aggregated = dict_aggregated
 
     def bleu_corpus(self, arr):
-        targets = [i[0] for i in arr][:1012]
+        n = _block_size(arr)
+        targets = [i[0] for i in arr][:n]
         translations = [i[1] for i in arr]
         bleus = []
 
         kwargs = self.metric_configs['bleu'].copy()
         del kwargs['compute']
 
-        for i in range(0, 15180, 1012):
-            translations_i = translations[i:i+1012]
+        for i in range(0, N_BLOCKS * n, n):
+            translations_i = translations[i:i+n]
 
             if self.get_target() in ['zho_Hans', 'zho_Hant', 'zho-CN']:
                 del kwargs['tokenize']
@@ -57,16 +72,17 @@ class _MTask(MTask):
         return bleus_task
     
     def ter_corpus(self, arr):
+        n = _block_size(arr)
 
         kwargs = self.metric_configs['ter'].copy()
         del kwargs['compute']
 
-        targets = [i[0] for i in arr][:1012]
+        targets = [i[0] for i in arr][:n]
         translations = [i[1] for i in arr]
         ters = []
 
-        for i in range(0, 15180, 1012):
-            translations_i = translations[i:i+1012]
+        for i in range(0, N_BLOCKS * n, n):
+            translations_i = translations[i:i+n]
             score = sacrebleu.corpus_ter(translations_i, [targets], **kwargs).score
             ters.append( round(score, 2) )
         
@@ -74,15 +90,16 @@ class _MTask(MTask):
         return ters_task
 
     def chrf_corpus(self, arr):
+        n = _block_size(arr)
         kwargs = self.metric_configs['chrf'].copy()
         del kwargs['compute']
 
-        targets = [i[0] for i in arr][:1012]
+        targets = [i[0] for i in arr][:n]
         translations = [i[1] for i in arr]
 
         chrfs = []
-        for i in range(0, 15180, 1012):
-            translations_i = translations[i:i+1012]
+        for i in range(0, N_BLOCKS * n, n):
+            translations_i = translations[i:i+n]
             score = sacrebleu.corpus_chrf(translations_i, [targets], **kwargs).score
             chrfs.append(round(score, 2))
 
@@ -90,18 +107,19 @@ class _MTask(MTask):
         return chrfs_task
 
     def comet_corpus(self, arr):
+        n = _block_size(arr)
 
         batch_size = self.metric_configs['comet']['batch_size']
         ck_name = self.metric_configs['comet']['checkpoint']
 
         self.comet = BaseCOMET(ck_name)
-        sources = [i[0] for i in arr][:1012]
-        targets = [i[1] for i in arr][:1012]
+        sources = [i[0] for i in arr][:n]
+        targets = [i[1] for i in arr][:n]
 
         translations = [i[2] for i in arr]
         comets = []
-        for i in range(0, 15180, 1012):
-            translations_i = translations[i:i+1012]
+        for i in range(0, N_BLOCKS * n, n):
+            translations_i = translations[i:i+n]
 
             comet_result = self.comet.evaluate(translations_i, targets, sources, batch_size )
             comets.append( round(comet_result["system_score"], 2) )
