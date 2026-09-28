@@ -868,10 +868,17 @@ class ConfigurableTask(Task):
                 **(self.config.metadata or {}), **(self.config.dataset_kwargs or {})
             )
         else:
+            path = resolve_dataset_path(self.DATASET_PATH)
+            dataset_kwargs = dict(dataset_kwargs or {})
+            if path != self.DATASET_PATH and vparse(datasets.__version__) < vparse("4.0.0"):
+                # The loader scripts under data/ ship with this repository, so
+                # they are trusted; otherwise datasets asks for confirmation
+                # (and fails in batch jobs) unless the loader is already cached.
+                dataset_kwargs.setdefault("trust_remote_code", True)
             self.dataset = datasets.load_dataset(
-                path=resolve_dataset_path(self.DATASET_PATH),
+                path=path,
                 name=self.DATASET_NAME,
-                **dataset_kwargs if dataset_kwargs is not None else {},
+                **dataset_kwargs,
             )
 
     def has_training_docs(self) -> bool:
