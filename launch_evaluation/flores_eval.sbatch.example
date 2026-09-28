@@ -2,7 +2,7 @@
 # Example SLURM launcher for the two-stage MT pipeline (scripts/run_mt_v3.sh).
 # Copy this file, fill in the <PLACEHOLDERS>, and submit with `sbatch`.
 # It generates translations + surface metrics in the Transformers-5 env, then
-# scores neural metrics in the Transformers-4 env. See README.md (Running an evaluation).
+# scores neural metrics in the Transformers-4 env. See README.md.
 #SBATCH --job-name=flores_eval
 #SBATCH --output=slurm_logs/%x_%j.out
 #SBATCH --error=slurm_logs/%x_%j.err
