@@ -1,8 +1,9 @@
 name: Sync with upstream lm-evaluation-harness
 
 # Weekly, checks EleutherAI/lm-evaluation-harness for a new stable release.
-# A clean merge lands on the default branch automatically. A merge with
-# conflicts is pushed to a branch and opened as a PR for manual resolution.
+# The merge is always pushed to a sync-upstream-<tag> branch and opened as a PR,
+# so nothing lands on the default branch without review. A merge with conflicts
+# is committed with its markers for manual resolution.
 on:
   schedule:
     - cron: "0 6 * * 1"   # Mondays 06:00 UTC
@@ -39,7 +40,7 @@ jobs:
             echo "needed=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Merge, or open a PR if it conflicts
+      - name: Merge on a branch and open a PR
         if: steps.rel.outputs.needed == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -63,22 +64,17 @@ jobs:
             fi
           }
 
+          git checkout -B "$BRANCH"
           if git merge "$TAG" --no-edit; then
-            # Clean merge -> land it on the default branch directly.
-            restore_workflows
-            git push origin "HEAD:$BASE"
-            echo "Clean merge of $TAG pushed to $BASE."
+            TITLE="Sync with upstream $TAG"
+            BODY=$(printf '%s\n' \
+              "Upstream $TAG merges cleanly. Review the changes and run the MT" \
+              "evaluation before merging into $BASE.")
           else
-            # Conflicts -> commit markers on a branch and open a PR to resolve.
-            git merge --abort
-            git checkout -B "$BRANCH"
-            git merge "$TAG" --no-edit || true
+            # Conflicts -> commit the markers as-is so they can be resolved on the branch.
             git add -A
             git commit -m "Merge $TAG (WITH CONFLICTS - resolve before merging)"
-            restore_workflows
-            git push -u origin "$BRANCH" --force
-
-            CONFLICTS=$(git diff "origin/$BASE"...HEAD --name-only --diff-filter=U 2>/dev/null || true)
+            TITLE="Sync with upstream $TAG (conflicts)"
             BODY=$(printf '%s\n' \
               "Merging upstream $TAG hit conflicts, and the markers are committed as-is," \
               "so this branch does **not** build. Resolve the conflicting files, then push" \
@@ -86,7 +82,9 @@ jobs:
               "" \
               "Rule of thumb from the v0.4.12 sync: for files upstream rewrote, take their" \
               "version and re-apply our changes on top rather than keeping ours.")
-            gh pr create --title "Sync with upstream $TAG (conflicts)" \
-              --body "$BODY" --base "$BASE" --head "$BRANCH" \
-              || echo "A PR for this branch already exists; branch updated in place."
           fi
+          restore_workflows
+          git push -u origin "$BRANCH" --force
+
+          gh pr create --title "$TITLE" --body "$BODY" --base "$BASE" --head "$BRANCH" \
+            || echo "A PR for this branch already exists; branch updated in place."

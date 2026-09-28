@@ -12,6 +12,7 @@ MT-lens is a fork of the EleutherAI's [lm-evaluation-harness](https://github.com
 ## Contents
 
 - [Installation](#installation)
+  - [Running an evaluation](#running-an-evaluation)
 - [Getting started](#getting-started)
   - [Supported models](#supported-models)
   - [Tasks](#tasks)
@@ -29,12 +30,67 @@ To use our framework first clone the project by:
 git clone https://github.com/bsc-lt/mt-evaluation.git
 ```
 
-Then install the required dependencies:
+MT-Lens uses two separate Python environments, because the neural metrics (COMET, COMET-Kiwi, BLEURT, MetricX) require Transformers 4 while generation runs on Transformers 5:
+
+| Environment | Used for | Requirements |
+|---|---|---|
+| Generation | Loading the model, translating, surface metrics (BLEU, chrF, TER) | `requirements-generation-v5.txt` (Transformers 5) |
+| Neural scoring | COMET, COMET-Kiwi, BLEURT, MetricX, MetricX-QE | `requirements-neural-v4.txt` (Transformers 4.53.3, pinned) |
+
+Generation environment (from the repository root):
 
 ```bash
 cd mt-evaluation
-pip install -e .
+python -m venv venv-v5
+venv-v5/bin/python -m pip install -e . -r requirements-generation-v5.txt
 ```
+
+Neural scoring environment (Python 3.10 or 3.11). Do **not** install the project itself into this environment; `neural_scoring` is run from the repository root:
+
+```bash
+python3.10 -m venv venv-neural-v4
+venv-neural-v4/bin/python -m pip install -r requirements-neural-v4.txt
+venv-neural-v4/bin/python -m pip check
+```
+
+`requirements-neural-v4.txt` is the full, pinned environment that produced our reported scores. It pins `torch==2.6.0+cu124`; on a machine with a different CUDA version, install the matching PyTorch build first.
+
+### Running an evaluation
+
+`scripts/run_mt_v3.sh` runs both stages for one output file:
+
+1. **Generation** (generation environment): runs `lm_eval` with neural metrics deferred and writes the translations and surface metrics to `OUTPUT.json`.
+2. **Neural scoring** (scoring environment): reads the translations from `OUTPUT.json`, computes the neural metrics and adds them, with segment-level scores, to the same file.
+
+```bash
+export GEN_PYTHON="$PWD/venv-v5/bin/python"
+export METRIC_PYTHON="$PWD/venv-neural-v4/bin/python"
+export MT_MODELS_DIR="/path/to/metric/checkpoints"
+
+bash scripts/run_mt_v3.sh results/my_model/results_en_es_flores+_devtest.json \
+    --model hf \
+    --model_args "pretrained=/path/to/model,dtype=bfloat16" \
+    --tasks "en_es_flores+_devtest" \
+    --batch_size 8 \
+    --translation_kwargs "src_language=eng_Latn,tgt_language=spa_Latn,prompt_style=salamandraTA_prompt_2" \
+    --gen_kwargs "max_gen_toks=800,num_beams=5"
+```
+
+- If `OUTPUT.json` already exists, generation is skipped and only the scoring stage runs again. When you change the model, prompt or generation parameters, use a new output path.
+- The script loads each stage's modules with Lmod (`GEN_MODULES`, `METRIC_MODULES`), so it expects the `module` command to be available.
+- `MT_METRICS_CONFIG` can point to an alternative metrics configuration file.
+- The wrapper supports the standard MT tasks; HolisticBias / toxicity tasks, which use custom aggregations, are not supported.
+
+A SLURM template is provided in `launch_evaluation/flores_eval.sbatch.example`.
+
+To (re)compute only the neural metrics for an existing output file:
+
+```bash
+venv-neural-v4/bin/python -m neural_scoring.score \
+    --input results/example.json --output results/example.json
+```
+
+The `lm_eval` commands shown in the rest of this README run in the generation environment. Set `MT_DEFER_NEURAL_METRICS=1` to skip the neural metrics there and compute them afterwards with `neural_scoring.score`.
 
 ### Usage Notes
 
@@ -57,6 +113,8 @@ huggingface-cli login --token $HUGGINGFACE_TOKEN
 #### Configuring Models in YAML
 
 If you plan to use these models, ensure that their corresponding entries are set to `compute: True` in the YAML configuration file.
+
+The BLEURT, MetricX and muTOX checkpoints in `lm_eval/extra_metrics/mt_metrics_config.yaml` are referenced as `${MT_MODELS_DIR}/<checkpoint>`. Set `MT_MODELS_DIR` to the directory where you downloaded them (`BLEURT-20`, `google_metricx_23_xl_v2p0`, `google_metricx_23_qe_xl_v2p0`, `google_mt5_xl`, `sonar_encoder`).
 
 ---
 
