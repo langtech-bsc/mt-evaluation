@@ -45,7 +45,7 @@ python -m venv venv-v5
 venv-v5/bin/python -m pip install -e . -r requirements-generation-v5.txt
 ```
 
-Neural scoring environment (Python 3.10 or 3.11). Do **not** install the project itself into this environment; `neural_scoring` is run from the repository root:
+Neural scoring environment (Python 3.10), also from the repository root:
 
 ```bash
 python3.10 -m venv venv-neural-v4
@@ -53,7 +53,15 @@ venv-neural-v4/bin/python -m pip install -r requirements-neural-v4.txt
 venv-neural-v4/bin/python -m pip check
 ```
 
-`requirements-neural-v4.txt` is the full, pinned environment that produced our reported scores. It pins `torch==2.6.0+cu124`; on a machine with a different CUDA version, install the matching PyTorch build first.
+`requirements-neural-v4.txt` is the full, pinned environment that produced our reported scores, and it installs the project itself (`-e .`). It pins `torch==2.6.0+cu124`; on a machine with a different CUDA version, install the matching PyTorch build first.
+
+Models that do not need Transformers 5 run the whole evaluation (generation, surface and neural metrics) in the neural scoring environment alone, by calling `lm_eval` directly with its Python:
+
+- `simplegenerator` (pre-generated translations read from a file)
+- `gguf` (generation through a `llama-server` HTTP endpoint)
+- `fairseq` / `ctranslate` bilingual models (the environment includes `fairseq` and `ctranslate2`; activate it so `ct2-fairseq-converter` is on `PATH`)
+
+Both environments include the MeCab tokenizers used for Japanese and Korean BLEU (`ja-mecab`, `ko-mecab`).
 
 ### Running an evaluation
 
@@ -90,7 +98,7 @@ venv-neural-v4/bin/python -m neural_scoring.score \
     --input results/example.json --output results/example.json
 ```
 
-The `lm_eval` commands shown in the rest of this README run in the generation environment. Set `MT_DEFER_NEURAL_METRICS=1` to skip the neural metrics there and compute them afterwards with `neural_scoring.score`.
+The `lm_eval` commands shown in the rest of this README run in the generation environment for Hugging Face models, and in the neural scoring environment for the `ctranslate`, `fairseq`, `simplegenerator` and `gguf` backends. When running `lm_eval` in the generation environment, set `MT_DEFER_NEURAL_METRICS=1` to skip the neural metrics there and compute them afterwards with `neural_scoring.score`.
 
 ### Usage Notes
 
