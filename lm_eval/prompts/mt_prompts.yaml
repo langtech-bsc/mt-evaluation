@@ -150,7 +150,7 @@ prompt_structures:
 
       <channel|>'
     language_map: true
-    mapping_type: ISO639_3_SCRIPT_TO_NAME
+    mapping_type: ISO639_3_SCRIPT_TO_SALAMANDRATA7B
   towerplus_xml:
     prompt: '<bos><start_of_turn>user
 
