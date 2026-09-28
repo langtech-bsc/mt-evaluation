@@ -389,7 +389,13 @@ class HFLM(TemplateLM):
         # access self._model through self.model property outside this method
         if isinstance(self.model, torch.nn.Module):
             self.model.eval()
-            self.model.tie_weights()
+            # Transformers 5 already ties weights in from_pretrained (and skips
+            # the tie when the checkpoint has different embeddings and LM head).
+            # Tying again here uses the config flag, which Transformers 5 reads
+            # as True for untied T5 checkpoints such as madlad400, and replaces
+            # the LM head with the input embeddings.
+            if vparse(transformers.__version__) < vparse("5.0.0"):
+                self.model.tie_weights()
 
         self.think_end_token = (
             int(think_end_token)

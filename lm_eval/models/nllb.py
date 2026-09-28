@@ -261,7 +261,9 @@ class NLLB(LM):
 
         # forever after, access self._model through self.model property
         self.model.eval()
-        self.model.tie_weights()
+        # Transformers 5 ties weights in from_pretrained already; see HFLM.
+        if version.parse(transformers.__version__) < version.parse("5.0.0"):
+            self.model.tie_weights()
         if gpus <= 1 and not parallelize:
             # place model onto device, if not using HF Accelerate in any form
             try:
