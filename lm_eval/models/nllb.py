@@ -205,22 +205,30 @@ class NLLB(LM):
                 assert (
                     transformers.__version__ >= "4.30.0"
                 ), "load_in_4bit requires transformers >= 4.30.0"
-            if transformers.__version__ >= "4.30.0":
-                model_kwargs["load_in_4bit"] = load_in_4bit
+            # Transformers 5 no longer accepts load_in_8bit/load_in_4bit in
+            # from_pretrained; quantization goes through BitsAndBytesConfig,
+            # and is only passed when requested.
+            if load_in_8bit or load_in_4bit:
+                bnb_kwargs = {"load_in_8bit": load_in_8bit, "load_in_4bit": load_in_4bit}
                 if load_in_4bit:
                     if bnb_4bit_quant_type:
-                        model_kwargs["bnb_4bit_quant_type"] = bnb_4bit_quant_type
+                        bnb_kwargs["bnb_4bit_quant_type"] = bnb_4bit_quant_type
                     if bnb_4bit_compute_dtype:
-                        model_kwargs["bnb_4bit_compute_dtype"] = get_dtype(
+                        bnb_kwargs["bnb_4bit_compute_dtype"] = get_dtype(
                             bnb_4bit_compute_dtype
                         )
+                model_kwargs["quantization_config"] = transformers.BitsAndBytesConfig(**bnb_kwargs)
+            dtype_arg = (
+                "dtype"
+                if version.parse(transformers.__version__) >= version.parse("4.56.0")
+                else "torch_dtype"
+            )
             self._model = self.AUTO_MODEL_CLASS.from_pretrained(
                 pretrained,
                 revision=revision,
-                torch_dtype=get_dtype(dtype),
+                **{dtype_arg: get_dtype(dtype)},
                 low_cpu_mem_usage=low_cpu_mem_usage,
                 trust_remote_code=trust_remote_code,
-                load_in_8bit=load_in_8bit,
                 attn_implementation='eager',
                 **model_kwargs,
             )
