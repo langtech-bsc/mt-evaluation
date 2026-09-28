@@ -19,7 +19,14 @@ from lm_eval.api.instance import Instance
 from lm_eval.api.model import LM
 from lm_eval.api.registry import register_model
 
-from lm_eval.models.utils import MultiTokenEOSCriteria, stop_sequences_criteria, get_dtype
+from lm_eval.models.utils_hf import (
+    MultiTokenEOSCriteria,
+    clear_torch_cache,
+    get_dtype,
+    pad_and_concat,
+    stop_sequences_criteria,
+)
+from lm_eval.utils import get_rolling_token_windows, make_disjoint_window
 from lm_eval.models import utils
 
 from accelerate import Accelerator, find_executable_batch_size, DistributedType
@@ -433,10 +440,10 @@ class NLLB(LM):
                 self.accelerator.gather(max_rnk_bs).cpu().detach().numpy().tolist()
             )
             batch_size = min(gathered)
-            utils.clear_torch_cache()
+            clear_torch_cache()
             return batch_size
 
-        utils.clear_torch_cache()
+        clear_torch_cache()
         return batch_size
 
     def tok_encode(
@@ -615,8 +622,8 @@ class NLLB(LM):
         for (string,) in tqdm([req.args for req in requests], disable=(self.rank != 0)):
             rolling_token_windows = list(
                 map(
-                    utils.make_disjoint_window,
-                    utils.get_rolling_token_windows(
+                    make_disjoint_window,
+                    get_rolling_token_windows(
                         token_list=self.tok_encode(string),
                         prefix_token=self.eot_token_id,
                         max_seq_len=self.max_length,
@@ -791,18 +798,18 @@ class NLLB(LM):
             # create encoder attn mask and batched conts, if seq2seq
             call_kwargs = {}
             if self.AUTO_MODEL_CLASS == transformers.AutoModelForCausalLM:
-                batched_inps = utils.pad_and_concat(
+                batched_inps = pad_and_concat(
                     padding_len_inp, inps, padding_side="right"
                 )  # [batch, padding_len_inp]
             elif self.AUTO_MODEL_CLASS == transformers.AutoModelForSeq2SeqLM:
                 # TODO: left-pad encoder inps and mask?
-                batched_inps = utils.pad_and_concat(
+                batched_inps = pad_and_concat(
                     padding_len_inp, inps
                 )  # [batch, padding_len_inp]
-                batched_conts = utils.pad_and_concat(
+                batched_conts = pad_and_concat(
                     padding_len_cont, conts
                 )  # [batch, padding_len_cont]
-                batched_encoder_mask = utils.pad_and_concat(
+                batched_encoder_mask = pad_and_concat(
                     padding_len_inp, encoder_attns
                 )  # [batch, padding_len_inp]
                 call_kwargs = {
