@@ -51,7 +51,9 @@ launch_evaluations/slurm_logs*/
 launch_evaluations/archived/
 data/downloads/
 *.tar.gz
-/results/
+/results/*
+!/results/nllb_3.3B/
+!/results/madlad400_3B/
 lm_cache/
 /output/
 /data/act_dev/
@@ -99,3 +101,4 @@ htmlcov/
 .Rapp.history
 /results_summary/*
 !/results_summary/results_mt.py
+!/results_summary/results_summary.csv
