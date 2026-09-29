@@ -542,6 +542,13 @@ def make_table(result_dict, column: str = "results", sort_results: bool = False)
             if m.endswith("_stderr"):
                 continue
 
+            # Modified by BSC: MT tasks also return per-segment scores and the
+            # source/target/translation texts as lists. They stay in the JSON
+            # output but are kept out of the printed table, whether or not the
+            # metric has a stderr entry.
+            if isinstance(v, list):
+                continue
+
             hib = HIGHER_IS_BETTER_SYMBOLS.get(higher_is_better.get(m), "")
 
             v = f"{v:.4f}" if isinstance(v, float) else v
@@ -551,10 +558,7 @@ def make_table(result_dict, column: str = "results", sort_results: bool = False)
                 se = "   N/A" if se == "N/A" else f"{se:.4f}"
                 values.append([k, version, f, n, m, hib, v, "±", se])
             else:
-                if isinstance(v, list): # Modified by BSC
-                    pass
-                else:
-                    values.append([k, version, f, n, m, hib, v, "", ""])
+                values.append([k, version, f, n, m, hib, v, "", ""])
             k = ""
             version = ""
     md_writer.value_matrix = values
