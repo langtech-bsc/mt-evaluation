@@ -16,14 +16,33 @@ cd "$repo_dir"
 output="$1"
 shift
 [[ "$output" == *.json ]] || { echo 'OUTPUT must end in .json' >&2; exit 2; }
+tasks=""
+expect_tasks=0
 for arg in "$@"; do
+    if (( expect_tasks )); then
+        tasks="$arg"
+        expect_tasks=0
+        continue
+    fi
     case "$arg" in
         --output_path*|--predict_only*)
             echo 'Remove output_path/predict_only: the wrapper controls MT output.' >&2
             exit 2 ;;
-        *holistic*)
-            echo 'Holistic/toxicity aggregation requires a separate adapter.' >&2
-            exit 2 ;;
+        --tasks=*) tasks="${arg#--tasks=}" ;;
+        --tasks) expect_tasks=1 ;;
+    esac
+done
+
+# HolisticBias (*_hb), MMHB (*_mmhb_*) and perturbations compute their own
+# metrics (muTOX/COMET-Kiwi, per-gender chrF, per-noise-level scores) and do not
+# write the source/target/translation arrays that neural_scoring reads. They run
+# entirely in the Transformers-4 environment instead, so the model must load
+# with Transformers 4.
+single_env=0
+IFS=',' read -r -a task_list <<< "$tasks"
+for task in "${task_list[@]}"; do
+    case "$task" in
+        *_hb|*_mmhb_*|*_perturbations) single_env=1 ;;
     esac
 done
 
@@ -47,6 +66,22 @@ load_stage_modules() {
 }
 
 mkdir -p "$(dirname "$output")"
+
+if (( single_env )); then
+    if [[ -f "$output" ]]; then
+        echo "Output already exists, nothing to do: $output"
+        exit 0
+    fi
+    echo "Task(s) $tasks compute their own metrics: running generation and all metrics in the Transformers-4 environment ($METRIC_PYTHON)."
+    (
+        load_stage_modules "$METRIC_MODULES"
+        export TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1
+        "$METRIC_PYTHON" -c 'import sys, torch, transformers; print(sys.executable, sys.version, transformers.__version__, torch.__version__, flush=True); assert transformers.__version__.split(".")[0] == "4", "Single-environment tasks require Transformers v4"'
+        "$METRIC_PYTHON" -m lm_eval "$@" --output_path "$output" --write_out
+    )
+    exit 0
+fi
+
 if [[ ! -f "$output" ]]; then
     (
         load_stage_modules "$GEN_MODULES"
