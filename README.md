@@ -40,7 +40,7 @@ python3.10 -m venv venv-neural-v4
 venv-neural-v4/bin/python -m pip install -r requirements-neural-v4.txt
 ```
 
-Hugging Face models are evaluated with `scripts/run_mt_v3.sh`, which generates the translations in `venv-v5` and computes the neural metrics in `venv-neural-v4` (see `launch_evaluation/flores_eval.sbatch.example`). The `ctranslate`, `fairseq`, `simplegenerator` and `gguf` backends run entirely in `venv-neural-v4`.
+Hugging Face models are evaluated with `scripts/run_mt_v3.sh`, which generates the translations in `venv-v5` and computes the neural metrics in `venv-neural-v4` (see `launch_evaluation/flores_eval.sbatch.example`). The `ctranslate`, `fairseq`, `simplegenerator` and `gguf` backends run entirely in `venv-neural-v4`. The `lm_eval --model hf` examples below list the arguments to pass to `scripts/run_mt_v3.sh`, with the output path as its first argument instead of `--output_path`. For HolisticBias, MMHB and perturbations tasks, `run_mt_v3.sh` runs the whole evaluation in `venv-neural-v4`, so the model must load with Transformers 4.
 
 ### Usage Notes
 
@@ -72,7 +72,7 @@ Local metric checkpoints (BLEURT, MetricX, muTOX) are read from `${MT_MODELS_DIR
 
 ### Supported models
 
-Currently, MT tasks support `fairseq`, `CTranslate2`, `transformers`, `openai-completions`, `local-completions`, `openai-chat-completions`, `local-chat-completions`, `anthropic`, `anthropic-chat`, `anthropic-chat-completions`, `textsynth`, `gguf`, `ggml`, `vllm`, `mamba_ssm`, `openvino`, `neuronx`, `deepsparse`, `sparseml`, `local-completions`, `local-chat-completions`, `nemo` and `nllb`.
+Currently, MT tasks support `fairseq`, `CTranslate2`, `transformers`, `openai-completions`, `local-completions`, `openai-chat-completions`, `local-chat-completions`, `anthropic-completions`, `anthropic-chat`, `anthropic-chat-completions`, `textsynth`, `gguf`, `ggml`, `vllm`, `mamba_ssm`, `openvino`, `neuronx`, `nemo_lm` and `nllb`.
 
 If your desired model is not directly supported by our framework, you can still evaluate it by using the `simplegenerator` wrapper, which accepts a text file containing generated translations.
 
@@ -205,11 +205,11 @@ GPUs_per_model=1
 model_replicas=1
 src_language='eng_Latn'
 tgt_language='cat_Latn'
-prompt_style='vllm_prompt'
+prompt_style='salamandraTA7B_instruct'  # an entry in lm_eval/prompts/mt_prompts.yaml
 output_dir='results/vllm_model/results_en_ca_flores_devtest.json'
 
 lm_eval --model vllm \
-    --model_args pretrained={model},tensor_parallel_size={GPUs_per_model},dtype=auto,gpu_memory_utilization=0.8,data_parallel_size={model_replicas} \
+    --model_args "pretrained=${model},tensor_parallel_size=${GPUs_per_model},dtype=auto,gpu_memory_utilization=0.8,data_parallel_size=${model_replicas}" \
     --tasks en_ca_flores_devtest \
     --batch_size auto \
     --write_out \
@@ -242,9 +242,9 @@ For evaluating a NMT model on ntrex, flores, flores+ or nteu multi-parallel data
 | ---------------------- | ------------------ |------------------ |
 | flores-dev        | {src}_{tgt}_flores_dev | 200 |
 | flores-devtest    | {src}_{tgt}_flores_devtest | 200 |
-| flores+ dev        | {src}_{tgt}_flores+_dev | 215 |
+| flores+ dev        | {src}_{tgt}_flores+_dev | 31 |
 | flores+ devtest    | {src}_{tgt}_flores+_devtest | 208 |
-| ntrex    | {src}_{tgt}_ntrex | 128 |
+| ntrex    | {src}_{tgt}_ntrex | 115 |
 | nteu    | {src}_{tgt}_nteu | 25 |
 
 where {src} and {tgt} have to be replaced with the two-letters ISO639 code of the source and target languages you want to use (e.g. en_es_flores_dev for English -> Spanish direction).
@@ -255,9 +255,9 @@ For non-multi-parallel datasets such as Tatoeba you can use the following task n
 
 | Dataset                |     Task name    | Language pairs |
 | ---------------------- | ------------------ |------------------ |
-| tatoeba-test        | {src}_{tgt}_tatoeba | 824 |
+| tatoeba-test        | {src}-{tgt}_tatoeba | 821 |
 
-where {src} and {tgt} have to be replaced with the corresponding code of the source and target languages you want to use. You can check the task names in the README file of each task (e.g. ./lm_eval/tasks/tatoeba/README.md ).
+where {src} and {tgt} have to be replaced with the three-letter codes of the source and target languages (e.g. eng-spa_tatoeba; both directions of each pair are available). The list of pairs is in `./lm_eval/tasks/tatoeba/task.py`.
 
 ##### Run a task
 
@@ -404,7 +404,7 @@ This will generate a JSON file in `$output_dir` containing the same metrics as a
 ##### Massive Multilingual HolisticBias (MMHB)
 
 > [!IMPORTANT]
-> Please download the MMHB dataset zip file and place it in the `./data/multilingual_holistic_bias/` directory. The dataset can be downloaded from the following link: [Archive Download - mmhb_dataset.zip](https://drive.google.com/file/d/1t3mNYcvJEC03zzB5dWe5OArWE-F1d8Qa/view?usp=sharing).
+> Please download the MMHB dataset zip file from the following link: [Archive Download - mmhb_dataset.zip](https://drive.google.com/file/d/1t3mNYcvJEC03zzB5dWe5OArWE-F1d8Qa/view?usp=sharing), extract it, and pack the extracted `mmhb_dataset/` folder as `./data/multilingual_holistic_bias/multilingual_holistic_bias.tar.gz` (e.g. `tar -czf data/multilingual_holistic_bias/multilingual_holistic_bias.tar.gz mmhb_dataset`).
 
 The Massive Multilingual HolisticBias (MMHB) dataset ([Tan, Xiaoqing Ellen, et al., 2024](https://arxiv.org/pdf/2407.00486)) is designed to detect and analyze gender bias in NMT models. The dataset allows for detailed evaluation of gender bias in translation tasks by using placeholder-based sentence generation, MMHB enables robust testing of gender-specific translations, helping to uncover disparities in how models handle masculine and feminine terms across languages. We implement MMHB for EN-XX directions (gender-specific task). To run MMHB, you can use the following task names, which allow you to specify the test split to use:
 
@@ -453,27 +453,6 @@ This will generate a JSON file in `$output_dir` containing the following fields:
 - `chrfs_both`: ChrF score for sentences with generic gender.
 - `chrfs_feminine`: ChrF score for sentences with feminine gender.
 - `chrfs_masculine`: ChrF score for sentences with masculine gender.
-
-<br>
-
-- `sources-both`: A list of source sentences with both genders (generic gender).
-- `references-both`: A list of reference sentences with both genders (generic gender).
-- `translations-both`: The corresponding translations of source sentences with generic gender.
-- `chf-segments-both`: Sentence level chrF scores for each translation.
-
-<br>
-
-- `sources-feminine`: A list of source sentences with feminine gender.
-- `references-feminine`: A list of reference sentences with feminine gender.
-- `translations-feminine`: The corresponding translations of feminine source sentences.
-- `chf-segments-feminine`: Sentence level chrF scores for each translation.
-
-<br>
-
-- `sources-masculine`: A list of source sentences with masculine gender.
-- `references-masculine`: A list of reference sentences with masculine gender.
-- `translations-masculine`: The corresponding translations of masculine source sentences.
-- `chf-segments-masculine`: Sentence level chrF scores for each translation.
 
 
 ##### MT GenEval Single Sentence
@@ -749,10 +728,6 @@ ETOX [(Costa-jussà et al., 2023)](https://arxiv.org/pdf/2210.03070) is toxicity
 muTOX [(Costa-jussà et al., 2023)](https://arxiv.org/pdf/2401.05060) is a toxicity classifier, which enables zero-shot toxicity detection across a wide range of languages. It uses SONAR [(Duquenne, P. A. et al., 2023)](https://arxiv.org/pdf/2308.11466) to compute sentence embeddings which are fed into muTOX classifier which returns a score between 0 and 1, where a score closer to 1 indicates a higher likelihood of toxicity in the translation.
 
 </details>
-
-### Adding new MT-datasets
-
-Coming soon.
 
 ### Visual Interface
 
