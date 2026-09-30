@@ -497,9 +497,12 @@ class Run(SubCommand):
                 f"limit: {cfg.limit}, num_fewshot: {cfg.num_fewshot}, "
                 f"batch_size: {cfg.batch_size}{f' ({batch_sizes})' if batch_sizes else ''}"
             )
-            print(make_table(results))
-            if "groups" in results:
-                print(make_table(results, "groups"))
+            # With neural metrics deferred (two-stage MT pipeline) the scores are
+            # incomplete here; neural_scoring.score prints the full table.
+            if os.environ.get("MT_DEFER_NEURAL_METRICS") != "1":
+                print(make_table(results))
+                if "groups" in results:
+                    print(make_table(results, "groups"))
 
             if cfg.wandb_args:
                 wandb_logger.run.finish()

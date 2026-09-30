@@ -125,18 +125,46 @@ def atomic_write(path, payload):
 
 
 def print_scores(payload, tasks):
-    """Print every scalar metric of the scored tasks (surface and neural)."""
+    """Print the results table of the scored tasks, surface and neural metrics together."""
+    header = ['Tasks', 'Version', 'Filter', 'n-shot', 'Metric', '', 'Value', '', 'Stderr']
+    right = {1, 3, 6}
+    rows = []
     for task in tasks:
-        scores = {
-            key.split(',')[0]: value
-            for key, value in payload['results'][task].items()
-            if isinstance(value, (int, float)) and not isinstance(value, bool)
-            and '_stderr' not in key and key not in ('sample_len', 'sample_count')
-        }
-        width = max((len(name) for name in scores), default=0)
-        print(f'\n{task}')
-        for name, value in scores.items():
-            print(f'  {name:<{width}}  {value:.4f}')
+        result = payload['results'][task]
+        better = payload.get('higher_is_better', {}).get(task, {})
+        name = task
+        version = payload.get('versions', {}).get(task, '')
+        for key in sorted(result):
+            value = result[key]
+            metric, _, filt = key.partition(',')
+            if (isinstance(value, bool) or not isinstance(value, (int, float))
+                    or metric.endswith('_stderr') or metric in ('sample_len', 'sample_count')):
+                continue
+            arrow = {True: '↑', False: '↓'}.get(better.get(metric), '')
+            stderr = result.get(f'{metric}_stderr,{filt}')
+            if stderr is None:
+                pm, stderr = '', ''
+            else:
+                pm, stderr = '±', stderr if isinstance(stderr, str) else f'{stderr:.4f}'
+            rows.append([name, str(version), filt, str(payload.get('n-shot', {}).get(task, '')),
+                         metric, arrow, f'{value:.4f}', pm, stderr])
+            name, version = '', ''
+    widths = [max(len(row[i]) for row in [header] + rows) for i in range(len(header))]
+
+    def line(cells, centre=False):
+        out = []
+        for i, cell in enumerate(cells):
+            if centre:
+                out.append(cell.center(widths[i]))
+            else:
+                out.append(cell.rjust(widths[i]) if i in right else cell.ljust(widths[i]))
+        return '|' + '|'.join(out) + '|'
+
+    print()
+    print(line(header, centre=True))
+    print('|' + '|'.join('-' * (w - 1) + ':' if i in right else '-' * w for i, w in enumerate(widths)) + '|')
+    for row in rows:
+        print(line(row))
     print()
 
 
