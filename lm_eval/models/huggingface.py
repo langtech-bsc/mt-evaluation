@@ -28,6 +28,7 @@ from transformers.models.auto.modeling_auto import (
 from lm_eval import utils
 from lm_eval.api.model import TemplateLM
 from lm_eval.api.registry import register_model
+from lm_eval.api.mt_task import is_mt_task
 from lm_eval.models.utils import (
     DEFAULT_MAX_LENGTH,
     TOKENIZER_INFINITY,  # noqa
@@ -1683,6 +1684,9 @@ class HFLM(TemplateLM):
             group_fn=lambda x: x[1],
         )
         chunks = re_ords.get_batched(n=batch_size, batch_fn=batch_fn)
+        # BSC MT: prompts that belong to MT tasks; only those get the newline
+        # stop sequences below.
+        mt_contexts = {req.args[0] for req in requests if is_mt_task(req.task_name)}
         # BSC: some tokenizers reject a bare int id
         eos = self.tok_decode(
             [self.eot_token_id] if isinstance(self.eot_token_id, int) else self.eot_token_id,
@@ -1698,13 +1702,15 @@ class HFLM(TemplateLM):
             )
             kwargs = normalize_gen_kwargs(gen_kwargs, self.max_gen_toks)
             # add EOS token to stop sequences
-            # BSC MT: a task passing `until=[]` opts out of the newline stop
-            # sequences below (multi-paragraph MT sources contain newlines).
+            # BSC MT: a translation is a single line, so MT tasks also stop at a
+            # newline. A task passing `until=[]` opts out (multi-paragraph MT
+            # sources contain newlines). Other lm-eval tasks keep their own stop
+            # sequences: answers such as GSM8K's span several lines.
             _requested_until = kwargs.pop("until", None)
             explicit_no_stop = _requested_until == []
             until = handle_stop_sequences(_requested_until, eos=eos)
             until.append("</s>")
-            if not explicit_no_stop:
+            if contexts[0] in mt_contexts and not explicit_no_stop:
                 until.append("\n")
                 until.append("\n\n")
             until.append("<end_of_turn>")  # gemma 2/3

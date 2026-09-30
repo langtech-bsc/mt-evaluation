@@ -1,3 +1,4 @@
+import functools
 import importlib
 import os
 import numpy as np
@@ -756,3 +757,14 @@ class MTask(ConfigurableTask):
 
         if cache_requests and (not cached_instances or rewrite_requests_cache):
             save_to_cache(file_name=cache_key, obj=instances)
+
+
+@functools.lru_cache(maxsize=None)
+def is_mt_task(task_name):
+    """Whether `task_name` is registered as an MT task (a subclass of MTask)."""
+    from lm_eval.api.registry import TASK_REGISTRY
+
+    try:
+        return task_name in TASK_REGISTRY and issubclass(TASK_REGISTRY[task_name], MTask)
+    except Exception:
+        return False
