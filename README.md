@@ -33,8 +33,8 @@ Then install the required dependencies. Generation and neural metrics use two se
 
 ```bash
 cd mt-evaluation
-python -m venv venv-v5
-venv-v5/bin/python -m pip install -e . -r requirements-generation-v5.txt
+python3.12 -m venv venv-v5
+venv-v5/bin/python -m pip install -r requirements-generation-v5.txt
 
 python3.10 -m venv venv-neural-v4
 venv-neural-v4/bin/python -m pip install -r requirements-neural-v4.txt
