@@ -61,7 +61,7 @@ METRICS_MT = [  "bleu", "ter", "chrf", "comet", "comet_kiwi", "bleurt",
                 "xcomet_error_spans", "xcomet_qe_error_spans", "metricx", "metricx_segments", "metricx_qe", "metricx_qe_segments", "blonde", "bleu_penalty",
                 "translations", "targets", "sources"]
 
-eval_logger = logging.getLogger("lm-eval")
+eval_logger = logging.getLogger(__name__)
 
 class MTask(ConfigurableTask):
 
