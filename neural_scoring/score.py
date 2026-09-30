@@ -124,6 +124,22 @@ def atomic_write(path, payload):
             os.unlink(tmp)
 
 
+def print_scores(payload, tasks):
+    """Print every scalar metric of the scored tasks (surface and neural)."""
+    for task in tasks:
+        scores = {
+            key.split(',')[0]: value
+            for key, value in payload['results'][task].items()
+            if isinstance(value, (int, float)) and not isinstance(value, bool)
+            and '_stderr' not in key and key not in ('sample_len', 'sample_count')
+        }
+        width = max((len(name) for name in scores), default=0)
+        print(f'\n{task}')
+        for name, value in scores.items():
+            print(f'  {name:<{width}}  {value:.4f}')
+    print()
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--input', required=True, type=Path)
@@ -155,6 +171,7 @@ def main():
     if args.input.read_bytes() != raw:
         raise RuntimeError('Input changed during scoring; refusing to overwrite results')
     atomic_write(args.output, result)
+    print_scores(result, [task for task, _, _, _ in tasks])
     print(f'Neural scores saved to {args.output}')
 
 
