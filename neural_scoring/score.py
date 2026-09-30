@@ -118,6 +118,12 @@ def atomic_write(path, payload):
     try:
         with os.fdopen(fd, 'w') as file:
             json.dump(payload, file, ensure_ascii=False, indent=2, allow_nan=False)
+        # mkstemp creates the file with mode 0600 whatever the umask is; give it
+        # the permissions a normally created file would get, so that results in
+        # a shared directory stay readable by the group.
+        umask = os.umask(0)
+        os.umask(umask)
+        os.chmod(tmp, 0o666 & ~umask)
         os.replace(tmp, path)
     finally:
         if os.path.exists(tmp):
