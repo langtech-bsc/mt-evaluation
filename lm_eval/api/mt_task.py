@@ -547,7 +547,10 @@ class MTask(ConfigurableTask):
         Returns:
             dict: A dictionary where keys are metric names and values are booleans indicating if higher values are better.
         """
-        return {k: True for k in METRICS_MT}
+        # TER and MetricX are error scores: lower is better.
+        lower_is_better = {"ter", "ter_segments", "metricx", "metricx_segments",
+                           "metricx_qe", "metricx_qe_segments"}
+        return {k: k not in lower_is_better for k in METRICS_MT}
     
     def get_target(self):
         return None
