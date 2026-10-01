@@ -23,7 +23,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v6
         with:
-          fetch-depth: 2  # OR "2" -> To retrieve the preceding commit.
+          fetch-depth: 0  # full history: PRs with many commits need it to find the merge base
 
       # Uses the tj-actions/changed-files action to check for changes.
       # The `files_yaml` input optionally takes a yaml string to specify filters,
