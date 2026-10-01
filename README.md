@@ -40,7 +40,7 @@ python3.10 -m venv venv-neural-v4
 venv-neural-v4/bin/python -m pip install -r requirements-neural-v4.txt
 ```
 
-Hugging Face models are evaluated with `scripts/run_mt_v3.sh`, which generates the translations in `venv-v5` and computes the neural metrics in `venv-neural-v4` (see `launch_evaluation/flores_eval.sbatch.example`). The `ctranslate`, `fairseq`, `simplegenerator` and `gguf` backends run entirely in `venv-neural-v4`. The `lm_eval --model hf` examples below list the arguments to pass to `scripts/run_mt_v3.sh`, with the output path as its first argument instead of `--output_path`. For HolisticBias, MMHB and perturbations tasks, `run_mt_v3.sh` runs the whole evaluation in `venv-neural-v4`, so the model must load with Transformers 4.
+Hugging Face models are evaluated with `scripts/run_mt.sh`, which generates the translations in `venv-v5` and computes the neural metrics in `venv-neural-v4` (see `launch_evaluation/flores_eval.sbatch.example`). The `ctranslate`, `fairseq`, `simplegenerator` and `gguf` backends run entirely in `venv-neural-v4`. The `lm_eval --model hf` examples below list the arguments to pass to `scripts/run_mt.sh`, with the output path as its first argument instead of `--output_path`. For HolisticBias, MMHB and perturbations tasks, `run_mt.sh` runs the whole evaluation in `venv-neural-v4`, so the model must load with Transformers 4.
 
 ### Usage Notes
 

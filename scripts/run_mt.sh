@@ -8,7 +8,7 @@ export MT_MODELS_DIR
 : "${METRIC_MODULES:=EB/apps Python/3.10.8-GCCcore-12.2.0}"
 
 if (( $# < 2 )); then
-    echo 'Usage: run_mt_v3.sh OUTPUT.json [lm_eval arguments]' >&2
+    echo 'Usage: run_mt.sh OUTPUT.json [lm_eval arguments]' >&2
     exit 2
 fi
 repo_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

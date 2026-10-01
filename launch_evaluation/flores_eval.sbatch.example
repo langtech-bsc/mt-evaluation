@@ -1,5 +1,5 @@
 #!/bin/bash
-# Example SLURM launcher for the two-stage MT pipeline (scripts/run_mt_v3.sh).
+# Example SLURM launcher for the two-stage MT pipeline (scripts/run_mt.sh).
 # Copy this file, fill in the <PLACEHOLDERS>, and submit with `sbatch`.
 # It generates translations + surface metrics in the Transformers-5 env, then
 # scores neural metrics in the Transformers-4 env. See README.md.
@@ -58,7 +58,7 @@ for pair in "${language_pairs[@]}"; do
 
     output_dir="results/${model_name_dir}/results_${src_abrv}_${tgt_abrv}_flores+_devtest.json"
 
-    bash scripts/run_mt_v3.sh "$output_dir" --model hf \
+    bash scripts/run_mt.sh "$output_dir" --model hf \
         --model_args "pretrained=${model},trust_remote_code=True,dtype=bfloat16" \
         --tasks "${src_abrv}_${tgt_abrv}_flores+_devtest" \
         --num_fewshot "$num_fewshot" \
