@@ -1,3 +1,4 @@
+--extra-index-url https://download.pytorch.org/whl/cu124
 absl-py==2.5.0
 accelerate==1.15.0
 aiohappyeyeballs==2.7.1
