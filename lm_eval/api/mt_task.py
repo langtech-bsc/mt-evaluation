@@ -113,6 +113,8 @@ class MTask(ConfigurableTask):
             or target in self.KOREAN_TARGETS
         ):
             eval_logger.info("Asian TER support set")
+            # sacrebleu applies asian_support only to normalized text.
+            kwargs["normalized"] = True
             kwargs["asian_support"] = True
 
         return kwargs

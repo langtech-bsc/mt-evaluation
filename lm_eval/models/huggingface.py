@@ -59,6 +59,78 @@ if TYPE_CHECKING:
 eval_logger = logging.getLogger(__name__)
 
 
+def _restore_untied_t5_weights(model, pretrained, revision=None, subfolder=None):
+    """Reload the input embeddings and LM head of untied T5 checkpoints.
+
+    Transformers 5 always ties the T5 LM head to the input embeddings. For a
+    checkpoint saved with tie_word_embeddings=False and no `shared.weight`
+    (e.g. madlad400-3b-mt, which stores the embeddings as
+    `decoder.embed_tokens.weight`), it fills the shared embeddings from
+    `lm_head.weight`, so the encoder reads the wrong embeddings.
+    """
+    if not hasattr(model, "shared") or not hasattr(model, "lm_head"):
+        return
+    # T5Config keeps the saved tie_word_embeddings=False as scale_decoder_outputs=False.
+    if getattr(model.config, "scale_decoder_outputs", True):
+        return
+    import json
+
+    from safetensors import safe_open
+    from transformers.utils import cached_file
+
+    def get_file(name):
+        return cached_file(
+            pretrained,
+            name,
+            revision=revision,
+            subfolder=subfolder or "",
+            _raise_exceptions_for_missing_entries=False,
+        )
+
+    index = get_file("model.safetensors.index.json")
+    if index is not None:
+        with open(index) as f:
+            weight_map = json.load(f)["weight_map"]
+        files = {key: get_file(name) for key, name in weight_map.items()}
+    else:
+        single = get_file("model.safetensors")
+        if single is None:
+            return
+        with safe_open(single, "pt") as f:
+            files = dict.fromkeys(f.keys(), single)
+    embed_key = next(
+        (
+            k
+            for k in (
+                "shared.weight",
+                "encoder.embed_tokens.weight",
+                "decoder.embed_tokens.weight",
+            )
+            if k in files
+        ),
+        None,
+    )
+    if embed_key is None or "lm_head.weight" not in files:
+        return
+
+    def load(key):
+        with safe_open(files[key], "pt") as f:
+            return f.get_tensor(key)
+
+    shared = model.shared.weight
+    with torch.no_grad():
+        if model.lm_head.weight is shared:
+            model.lm_head.weight = torch.nn.Parameter(torch.empty_like(shared))
+        model.lm_head.weight.copy_(load("lm_head.weight"))
+        shared.copy_(load(embed_key))
+    model.encoder.embed_tokens.weight = shared
+    model.decoder.embed_tokens.weight = shared
+    model.config.tie_word_embeddings = False
+    eval_logger.info(
+        f"Reloaded the untied T5 embeddings ({embed_key}) and LM head from the checkpoint."
+    )
+
+
 @register_model("hf-auto", "hf", "huggingface")
 class HFLM(TemplateLM):
     """An abstracted Huggingface model class. Enables usage with both models of
@@ -397,6 +469,10 @@ class HFLM(TemplateLM):
             # the LM head with the input embeddings.
             if vparse(transformers.__version__) < vparse("5.0.0"):
                 self.model.tie_weights()
+            elif isinstance(pretrained, str) and not gguf_file:
+                _restore_untied_t5_weights(
+                    self.model, pretrained, revision=revision, subfolder=subfolder
+                )
 
         self.think_end_token = (
             int(think_end_token)

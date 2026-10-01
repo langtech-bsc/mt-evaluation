@@ -29,15 +29,15 @@ To use our framework first clone the project by:
 git clone https://github.com/bsc-lt/mt-evaluation.git
 ```
 
-Then install the required dependencies. Generation and neural metrics use two separate environments:
+Then install the required dependencies. Generation and neural metrics use two separate environments. The requirements files pin every package, so they are installed with `--no-deps`; `env -u PYTHONPATH PYTHONNOUSERSITE=1` keeps packages from cluster modules and `~/.local` out of the environments:
 
 ```bash
 cd mt-evaluation
 python3.12 -m venv venv-v5
-venv-v5/bin/python -m pip install -r requirements-generation-v5.txt
+env -u PYTHONPATH PYTHONNOUSERSITE=1 venv-v5/bin/python -m pip install --no-deps -r requirements-generation-v5.txt
 
 python3.10 -m venv venv-neural-v4
-venv-neural-v4/bin/python -m pip install -r requirements-neural-v4.txt
+env -u PYTHONPATH PYTHONNOUSERSITE=1 venv-neural-v4/bin/python -m pip install --no-deps -r requirements-neural-v4.txt
 ```
 
 Hugging Face models are evaluated with `scripts/run_mt.sh`, which generates the translations in `venv-v5` and computes the neural metrics in `venv-neural-v4` (see `launch_evaluation/flores_eval.sbatch.example`). The `ctranslate`, `fairseq`, `simplegenerator` and `gguf` backends run entirely in `venv-neural-v4`. The `lm_eval --model hf` examples below list the arguments to pass to `scripts/run_mt.sh`, with the output path as its first argument instead of `--output_path`. For HolisticBias, MMHB and perturbations tasks, `run_mt.sh` runs the whole evaluation in `venv-neural-v4`, so the model must load with Transformers 4.
