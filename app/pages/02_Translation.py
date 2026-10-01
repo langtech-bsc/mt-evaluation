@@ -1,7 +1,6 @@
 import streamlit as st
 import json
 import pandas as pd
-import matplotlib.pyplot as plt
 import os
 import plotly.express as px
 from annotated_text import annotated_text 
