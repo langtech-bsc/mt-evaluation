@@ -26,15 +26,13 @@ def plot_language_comparison_spider(data, metric, init=0, limit=100, srcxx = 'ca
     model_colors = {model: next(color_cycle) for model in models}
 
     # Lang as source
-    targets_source = data[data['source'] == srcxx]['target'].unique()
-    targets_source.sort()
+    targets_source = sorted(data[data['source'] == srcxx]['target'].unique())
 
     angles_source = np.linspace(0, 2 * np.pi, len(targets_source), endpoint=False).tolist()
     angles_source += angles_source[:1]  # Complete the loop
 
     # Lang as target
-    sources_target = data[data['target'] == tgtxx]['source'].unique()
-    sources_target.sort()
+    sources_target = sorted(data[data['target'] == tgtxx]['source'].unique())
 
     angles_target = np.linspace(0, 2 * np.pi, len(sources_target), endpoint=False).tolist()
     angles_target += angles_target[:1]  # Complete the loop
@@ -53,8 +51,8 @@ def plot_language_comparison_spider(data, metric, init=0, limit=100, srcxx = 'ca
         scores_source = [model_data_source[model_data_source['target'] == tgt][metric].values[0] if not model_data_source[model_data_source['target'] == tgt].empty else 0 for tgt in targets_source]
         scores_source += scores_source[:1]  # Complete the loop
 
-        angles_mod_source = [a for i, a in enumerate(angles_source) if scores_source[i] != 0]
-        scores_mod_source = [s for i, s in enumerate(scores_source) if s != 0]
+        angles_mod_source = [a for i, a in enumerate(angles_source) if pd.notna(scores_source[i]) and scores_source[i] != 0]
+        scores_mod_source = [s for s in scores_source if pd.notna(s) and s != 0]
 
         if len(scores_mod_source) > 0: added_models_legend.append(model)
 
@@ -76,8 +74,8 @@ def plot_language_comparison_spider(data, metric, init=0, limit=100, srcxx = 'ca
         scores_target = [model_data_target[model_data_target['source'] == src][metric].values[0] if not model_data_target[model_data_target['source'] == src].empty else 0 for src in sources_target]
         scores_target += scores_target[:1]  # Complete the loop
 
-        angles_mod_target = [a for i, a in enumerate(angles_target) if scores_target[i] != 0]
-        scores_mod_target = [s for i, s in enumerate(scores_target) if s != 0]
+        angles_mod_target = [a for i, a in enumerate(angles_target) if pd.notna(scores_target[i]) and scores_target[i] != 0]
+        scores_mod_target = [s for s in scores_target if pd.notna(s) and s != 0]
 
         fig.add_trace(go.Scatterpolar(
             r=scores_mod_target,

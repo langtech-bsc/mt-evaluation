@@ -30,7 +30,10 @@ def main():
             options_tgt = sorted(dataplot['target'].unique())
             tgtxx = st.selectbox('Target language', options=options_tgt, index=options_tgt.index('ca') if 'ca' in options_tgt else 0)
 
-        filtered_dataset = dataplot.query("dataset == @dataset_chart_selected and model_name in @selected_model_name")
+        filtered_dataset = dataplot.query("dataset == @dataset_chart_selected and model_name in @selected_model_name").copy()
+        # Some datasets (e.g. perturbations) store dicts in metric columns, so the whole
+        # column is read as strings; convert to numbers or max()/plotting compare text.
+        filtered_dataset[metric_chart_selected] = pd.to_numeric(filtered_dataset[metric_chart_selected], errors='coerce')
         if filtered_dataset.empty:
             st.warning("No data available for the selected dataset and model(s). Please try different options.")
         else:
