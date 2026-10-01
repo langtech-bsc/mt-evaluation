@@ -1,11 +1,13 @@
 import re
 from abc import abstractmethod
 from functools import reduce
+from typing import ClassVar
 
 import numpy as np
-import transformers.data.metrics.squad_metrics as squad_metrics
-from datasets import Dataset, load_metric
+from datasets import Dataset, load_dataset
+from evaluate import load
 from transformers import AutoTokenizer
+from transformers.data.metrics import squad_metrics
 
 from lm_eval.api.instance import Instance
 from lm_eval.api.metrics import mean
@@ -48,7 +50,10 @@ def _download_metric():
     from huggingface_hub import hf_hub_download
 
     scrolls_metric_path = hf_hub_download(
-        repo_id="tau/scrolls", repo_type="dataset", filename="metrics/scrolls.py"
+        repo_id="tau/scrolls",
+        repo_type="dataset",
+        filename="metrics/scrolls.py",
+        revision="refs/pr/5",
     )
     updated_scrolls_metric_path = (
         os.path.dirname(scrolls_metric_path)
@@ -82,7 +87,7 @@ def _drop_duplicates_in_input(untokenized_dataset):
     id_to_idx = {}
     outputs = []
     for i, (id_, output) in enumerate(
-        zip(untokenized_dataset["id"], untokenized_dataset["output"])
+        zip(untokenized_dataset["id"], untokenized_dataset["output"], strict=False)
     ):
         if id_ in id_to_idx:
             outputs[id_to_idx[id_]].append(output)
@@ -116,10 +121,14 @@ class _SCROLLSTask(ConfigurableTask):
     PRUNE_MAX_TOKENS = None
     PRUNE_NUM_PROC = None
 
+    # Each subtask ships as "<name>/<split>.jsonl" inside "<name>.zip", stored
+    # in the dataset repo alongside the loading script.
+    ZIP_URL = "https://huggingface.co/datasets/{path}/resolve/main/{name}.zip"
+
     def __init__(self, config=None):
         super().__init__(config={"metadata": {"version": self.VERSION}})
         if self.DATASET_NAME is not None:
-            self.metric = load_metric(_download_metric(), config_name=self.DATASET_NAME)
+            self.metric = load(_download_metric(), config_name=self.DATASET_NAME)
 
     def has_training_docs(self):
         return True
@@ -159,8 +168,18 @@ class _SCROLLSTask(ConfigurableTask):
         return doc["input"]
 
     def download(self, *args, **kwargs):
-        super().download(*args, **kwargs)
-        del self.dataset["test"]
+        # `datasets` no longer runs loading scripts, so read the zipped jsonl
+        # that the dataset repo already publishes rather than going through
+        # scrolls.py. Only train and validation carry labels upstream, so the
+        # held-out test split is not loaded at all.
+        zip_url = self.ZIP_URL.format(path=self.DATASET_PATH, name=self.DATASET_NAME)
+        self.dataset = load_dataset(
+            "json",
+            data_files={
+                split: f"zip://{self.DATASET_NAME}/{split}.jsonl::{zip_url}"
+                for split in ("train", "validation")
+            },
+        )
         for split in self.dataset:
             self.dataset[split] = _drop_duplicates_in_input(self.dataset[split])
         if self.PRUNE_TOKENIZERS is not None:
@@ -182,7 +201,7 @@ class _SCROLLSTask(ConfigurableTask):
 
         def _filter(sample):
             text = self._get_prune_text(sample)
-            cached = cache.get(text, None)
+            cached = cache.get(text)
             if cached is None:
                 for tokenizer in tokenizers:
                     if len(tokenizer(text).input_ids) > self.PRUNE_MAX_TOKENS:
@@ -210,7 +229,7 @@ class _SCROLLSTask(ConfigurableTask):
 
     def _make_compute_metrics(self, value):
         def compute_metrics(samples):
-            predictions, references = zip(*samples)  # unzip, if you will
+            predictions, references = zip(*samples, strict=False)  # unzip, if you will
             computed = self.metric.compute(
                 predictions=predictions, references=references
             )
@@ -241,7 +260,7 @@ class _SCROLLSMultipleChoiceTask(_SCROLLSTask):
     def process_results(self, doc, results):
         gold = doc["gold"]
 
-        lls, _ = zip(*results)
+        lls, _ = zip(*results, strict=False)
         acc = 1.0 if np.argmax(lls) == gold else 0.0
         completion_len = np.array([float(len(i)) for i in doc["choices"]])
         acc_norm = 1.0 if np.argmax(lls / completion_len) == gold else 0.0
@@ -252,12 +271,16 @@ class _SCROLLSMultipleChoiceTask(_SCROLLSTask):
             "em": acc_norm * 100.0,
         }
 
-    def construct_requests(self, doc, ctx, **kwargs):
+    def construct_requests(
+        self, doc, ctx, chat_template=None, apply_chat_template=False, **kwargs
+    ):
         request_list = [
             Instance(
                 request_type="loglikelihood",
                 doc=doc,
-                arguments=(ctx, " {}".format(choice)),
+                arguments=(ctx, f" {choice}")
+                if not apply_chat_template
+                else (ctx, f"{choice}"),
                 idx=i,
                 **kwargs,
             )
@@ -284,7 +307,9 @@ class _SCROLLSSummaryTask(_SCROLLSTask):
             "rougeL": (results[0], doc["outputs"]),
         }
 
-    def construct_requests(self, doc, ctx, **kwargs):
+    def construct_requests(
+        self, doc, ctx, chat_template=None, apply_chat_template=False, **kwargs
+    ):
         return Instance(
             request_type="generate_until",
             doc=doc,
@@ -307,8 +332,9 @@ class Qasper(_SCROLLSTask):
     def _process_doc(self, doc):
         doc = _process_doc_prepended_question(doc)
         doc["is_yes_no"] = reduce(
-            lambda prev, cur: prev
-            and squad_metrics.normalize_answer(cur) in ["yes", "no"],
+            lambda prev, cur: (
+                prev and squad_metrics.normalize_answer(cur) in ["yes", "no"]
+            ),
             doc["outputs"],
             True,
         )
@@ -326,20 +352,24 @@ class Qasper(_SCROLLSTask):
             prediction = results[0]
         return {"f1": (prediction, doc["outputs"])}
 
-    def construct_requests(self, doc, ctx, **kwargs):
+    def construct_requests(
+        self, doc, ctx, chat_template=None, apply_chat_template=False, **kwargs
+    ):
         if doc["is_yes_no"]:
             return [
                 Instance(
                     request_type="loglikelihood",
                     doc=doc,
-                    arguments=(ctx, " yes"),
+                    arguments=(ctx, " yes")
+                    if not apply_chat_template
+                    else (ctx, "yes"),
                     idx=0,
                     **kwargs,
                 ),
                 Instance(
                     request_type="loglikelihood",
                     doc=doc,
-                    arguments=(ctx, " no"),
+                    arguments=(ctx, " no") if not apply_chat_template else (ctx, "no"),
                     idx=1,
                     **kwargs,
                 ),
@@ -405,7 +435,9 @@ class NarrativeQA(_SCROLLSTask):
     def process_results(self, doc, results):
         return {"f1": (results[0], doc["outputs"])}
 
-    def construct_requests(self, doc, ctx, **kwargs):
+    def construct_requests(
+        self, doc, ctx, chat_template=None, apply_chat_template=False, **kwargs
+    ):
         return Instance(
             request_type="generate_until",
             doc=doc,
@@ -421,7 +453,7 @@ class ContractNLI(_SCROLLSMultipleChoiceTask):
     """
 
     DATASET_NAME = "contract_nli"
-    CHOICES = ["Not mentioned", "Entailment", "Contradiction"]
+    CHOICES: ClassVar[list[str]] = ["Not mentioned", "Entailment", "Contradiction"]
 
     def _process_doc(self, doc):
         doc = _process_doc_prepended_question(doc)

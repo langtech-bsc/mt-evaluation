@@ -1,5 +1,5 @@
 import random
-from lm_eval import utils
+from lm_eval.models import utils
 from lm_eval.api.model import LM
 from lm_eval.api.registry import register_model
 import ctranslate2
@@ -15,7 +15,9 @@ class CTranslateMAIN(LM):
     An abstracted Ctranslate model class.
     """
 
-    def __init__(self, model, batch_size=1) -> None:
+    def __init__(self, model, batch_size=1, **kwargs) -> None:
+        # The harness injects device/max_batch_size into every backend; this
+        # model selects its own device below, so extra kwargs are ignored.
         super().__init__()
         eval_logger.info(f"Cuda Available? {torch.cuda.is_available()}")
         self._device = (
@@ -69,8 +71,8 @@ class CTranslateMAIN(LM):
 @register_model("ctranslate")
 class CTranslate(CTranslateMAIN):
 
-    def __init__(self, model, batch_size=1) -> None:
-        super().__init__(model, batch_size)
+    def __init__(self, model, batch_size=1, **kwargs) -> None:
+        super().__init__(model, batch_size, **kwargs)
 
 @register_model("fairseq")
 class Fairseq(CTranslateMAIN):
@@ -79,18 +81,31 @@ class Fairseq(CTranslateMAIN):
     to CTranslate. This class, inherits from the CTranslate class
     """
 
-    def __init__(self, model_name, model_fairseq, data_dir, spm_path, batch_size=1) -> None:
+    def __init__(self, model_name, model_fairseq, data_dir, spm_path, batch_size=1, **kwargs) -> None:
 
         PATH_CTRANSLATE_MODELS = './ctranslate_models'
         path_converted_model = os.path.join(PATH_CTRANSLATE_MODELS, model_name)
 
         if not os.path.exists(path_converted_model):
-            os.system(f"ct2-fairseq-converter --model_path {model_fairseq} --data_dir {data_dir} --output_dir {path_converted_model}")
+            # Fairseq checkpoints store an argparse.Namespace, which torch>=2.6
+            # refuses to unpickle under its new default weights_only=True; the
+            # converter needs --unsafe_deserialization to read them.
+            rc = os.system(
+                f"ct2-fairseq-converter --unsafe_deserialization "
+                f"--model_path {model_fairseq} --data_dir {data_dir} "
+                f"--output_dir {path_converted_model}"
+            )
+            if rc != 0 or not os.path.exists(path_converted_model):
+                raise RuntimeError(
+                    f"ct2-fairseq-converter failed for '{model_name}' (exit {rc}). "
+                    "Check that fairseq and ctranslate2 are installed in this env "
+                    "and that the checkpoint is readable."
+                )
 
             # Move spm_path to path_converted_model
             spm_dest_path = os.path.join(path_converted_model, 'spm.model')
             shutil.copy(spm_path, spm_dest_path)
-            
+
         else:
             eval_logger.info(f"Model already converted to ctranslate2. Re-using converted model: {path_converted_model}")
         super().__init__(path_converted_model)

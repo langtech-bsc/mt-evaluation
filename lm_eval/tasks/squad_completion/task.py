@@ -1,5 +1,5 @@
 import re
-from typing import List
+from copy import deepcopy
 
 import numpy as np
 
@@ -8,7 +8,7 @@ from lm_eval.api.task import ConfigurableTask
 
 
 class SQUADCompletion(ConfigurableTask):
-    VERSION = 0
+    VERSION = 1
     DATASET_PATH = "hazyresearch/based-squad"
     DATASET_NAME = "default"
 
@@ -28,12 +28,14 @@ class SQUADCompletion(ConfigurableTask):
         return self.dataset["validation"]
 
     def doc_to_text(self, doc):
-        return doc["text"]
+        return doc["text"].strip()
 
     def doc_to_target(self, doc):
-        return doc["value"]
+        return doc["value"].strip()
 
-    def construct_requests(self, doc, ctx, **kwargs):
+    def construct_requests(
+        self, doc, ctx, chat_template=None, apply_chat_template=False, **kwargs
+    ):
         """Uses RequestFactory to construct Requests and returns an iterable of
         Requests which will be sent to the LM.
 
@@ -44,12 +46,14 @@ class SQUADCompletion(ConfigurableTask):
             language description, as well as the few shot examples, and the question
             part of the document for `doc`.
         """
-
+        arguments = deepcopy(self.config.generation_kwargs)
+        arguments["until"] = arguments.get("until", ["\n"])
+        arguments["max_gen_toks"] = arguments.get("max_gen_toks", 48)
         return [
             Instance(
                 request_type="generate_until",
                 doc=doc,
-                arguments=(ctx, {"until": ["\n"], "max_gen_toks": 48}),
+                arguments=(ctx, arguments),
                 idx=0,
                 **kwargs,
             )
@@ -68,7 +72,7 @@ class SQUADCompletion(ConfigurableTask):
         # continuation, (logprob_unanswerable, _) = results
         continuation = results
 
-        return {"contains": contains_score(continuation[0], [doc["value"]])}
+        return {"contains": contains_score(continuation[0], [self.doc_to_target(doc)])}
 
     def aggregation(self):
         """
@@ -91,7 +95,7 @@ class SQUADCompletion(ConfigurableTask):
         }
 
 
-def contains_score(prediction: str, labels: List[str]):
+def contains_score(prediction: str, labels: list[str]):
     return max(
         int(bool(re.search(re.compile(re.escape(label), re.IGNORECASE), prediction)))
         for label in labels

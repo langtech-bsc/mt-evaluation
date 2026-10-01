@@ -1,9 +1,36 @@
+import functools
+import importlib
+import os
 import numpy as np
-from lm_eval.extra_metrics.bleurt.metric import BLEURT
-from lm_eval.extra_metrics.comet.metric import BaseCOMET
-from lm_eval.extra_metrics.comet_kiwi.metric import COMETKiwi
-from lm_eval.extra_metrics.xcomet.metric import XCOMET, XCOMET_QE
-from lm_eval.extra_metrics.metricx.metric import RefMetricX, QEMetricX
+
+
+def _optional(module_path, *names):
+    """Import metric implementations that may not be installed or may not
+    support the current transformers version.
+
+    A metric that is turned off in mt_metrics_config.yaml must not stop the
+    whole framework from importing, so failures are deferred until the metric
+    is actually used.
+    """
+    def factory(name):
+        def create(*args, **kwargs):
+            module = importlib.import_module(module_path)
+            return getattr(module, name)(*args, **kwargs)
+        return create
+
+    return tuple(factory(name) for name in names)
+
+
+(BLEURT,) = _optional("lm_eval.extra_metrics.bleurt.metric", "BLEURT")
+(BaseCOMET,) = _optional("lm_eval.extra_metrics.comet.metric", "BaseCOMET")
+(COMETKiwi,) = _optional("lm_eval.extra_metrics.comet_kiwi.metric", "COMETKiwi")
+XCOMET, XCOMET_QE = _optional("lm_eval.extra_metrics.xcomet.metric", "XCOMET", "XCOMET_QE")
+RefMetricX, QEMetricX = _optional(
+    "lm_eval.extra_metrics.metricx.metric", "RefMetricX", "QEMetricX"
+)
+# document level mt-evaluation
+(BLONDE,) = _optional("blonde", "BLONDE")
+
 from lm_eval.api.task import ConfigurableTask
 from lm_eval import utils
 import sacrebleu
@@ -32,16 +59,63 @@ from typing import (
 
 METRICS_MT = [  "bleu", "ter", "chrf", "comet", "comet_kiwi", "bleurt", 
                 "xcomet", "xcomet_qe", "bleu_segments", "ter_segments", "chrf_segments", "comet_kiwi_segments", "comet_segments", "xcomet_segments", "xcomet_qe_segments", 
-                "xcomet_error_spans", "xcomet_qe_error_spans", "metricx", "metricx_segments", "metricx_qe", "metricx_qe_segments", 
+                "xcomet_error_spans", "xcomet_qe_error_spans", "metricx", "metricx_segments", "metricx_qe", "metricx_qe_segments", "blonde", "bleu_penalty",
                 "translations", "targets", "sources"]
 
-eval_logger = logging.getLogger("lm-eval")
+eval_logger = logging.getLogger(__name__)
 
 class MTask(ConfigurableTask):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.metric_configs = None
+        self._bleu_penalty = None
+
+    CHINESE_TARGETS = {
+        "zho_Hans",
+        "zho_Hant",
+        "zho-CN",
+        "zh",
+        "zh_CN",
+        "zh_TW",
+        "cmn_Hans",
+        "cmn_Hant",
+        "yue_Hant",
+    }
+    JAPANESE_TARGETS = {"jpn_Jpan", "ja", "ja_JP"}
+    KOREAN_TARGETS = {"kor_Hang", "kor_Kore", "ko", "ko_KR"}
+
+    def _bleu_kwargs_for_target(self):
+        kwargs = self.metric_configs["bleu"].copy()
+        kwargs.pop("compute", None)
+
+        target = self.get_target()
+        if target in self.CHINESE_TARGETS:
+            eval_logger.info("Chinese tokenizer set")
+            kwargs["tokenize"] = "zh"
+        elif target in self.KOREAN_TARGETS:
+            eval_logger.info("Korean tokenizer set")
+            kwargs["tokenize"] = "ko-mecab"
+        elif target in self.JAPANESE_TARGETS:
+            eval_logger.info("Japanese tokenizer set")
+            kwargs["tokenize"] = "ja-mecab"
+
+        return kwargs
+
+    def _ter_kwargs_for_target(self):
+        kwargs = self.metric_configs["ter"].copy()
+        kwargs.pop("compute", None)
+
+        target = self.get_target()
+        if (
+            target in self.CHINESE_TARGETS
+            or target in self.JAPANESE_TARGETS
+            or target in self.KOREAN_TARGETS
+        ):
+            eval_logger.info("Asian TER support set")
+            kwargs["asian_support"] = True
+
+        return kwargs
 
     ############## METRICS ##############
     def bleu_corpus(self, arr):
@@ -55,15 +129,11 @@ class MTask(ConfigurableTask):
         """
         targets = [i[0] for i in arr]
         translations = [i[1] for i in arr]
-        kwargs = self.metric_configs['bleu'].copy()
-        del kwargs['compute']
-
-        if self.get_target() in ['zho_Hans', 'zho_Hant', 'zho-CN']:
-            del kwargs['tokenize']
-            bleuscore = sacrebleu.corpus_bleu(translations, [targets], tokenize='zh', **kwargs)
-            return bleuscore.score
-
+        kwargs = self._bleu_kwargs_for_target()
         bleuscore = sacrebleu.corpus_bleu(translations, [targets], **kwargs)
+
+        self._bleu_penalty = bleuscore.bp
+
         return bleuscore.score
 
     def ter_corpus(self, arr):
@@ -75,12 +145,11 @@ class MTask(ConfigurableTask):
         Returns:
             float: The TER score.
         """
-        kwargs = self.metric_configs['ter'].copy()
-        del kwargs['compute']
-
+        kwargs = self._ter_kwargs_for_target()
         targets = [i[0] for i in arr]
         translations = [i[1] for i in arr]
         score = sacrebleu.corpus_ter(translations, [targets], **kwargs).score
+
         return score
 
     def chrf_corpus(self, arr):
@@ -244,32 +313,54 @@ class MTask(ConfigurableTask):
         metricxqe_result = self.metricx_qe.evaluate(sources = sources, hypotheses = translations, references = [])
         self.metricxqe_segments_list = metricxqe_result['segments_scores']
         return metricxqe_result["system_score"]
+    
+    def blonde_corpus(self, arr):
+        """
+        Computes the BLONDE score for the corpus.
+        Args:
+            arr (list): A list of tuples containing source and translation tuples.
+
+        Returns:
+            float: BLONDE dict with all metrics
+        """
+        targets = [ [ i[0] ] for i in arr]
+        translations = [ [ i[1] ] for i in arr]
+
+        blonde = BLONDE()
+        score = blonde.corpus_score(translations, [targets])
+
+        return score.__dict__
 
     ############## SEGMENTS ##############
     def bleu_segments(self, arr):
         targets = [i[0] for i in arr]
         translations = [i[1] for i in arr]
+        kwargs = self._bleu_kwargs_for_target()
         segment_scores = []
         for h, r in zip(translations, targets):
-            segment_score = sacrebleu.corpus_bleu([h], [[r]])
+            segment_score = sacrebleu.corpus_bleu([h], [[r]], **kwargs)
             segment_scores.append(segment_score.score)
         return segment_scores
 
     def ter_segments(self, arr):
         targets = [i[0] for i in arr]
         translations = [i[1] for i in arr]
+        kwargs = self._ter_kwargs_for_target()
         segment_scores = []
         for h, r in zip(translations, targets):
-            segment_score = sacrebleu.corpus_ter([h], [[r]])
+            segment_score = sacrebleu.corpus_ter([h], [[r]], **kwargs)
             segment_scores.append(segment_score.score)
         return segment_scores
     
     def chrf_segments(self, arr):
+        kwargs = self.metric_configs['chrf'].copy()
+        del kwargs['compute']
+
         targets = [i[0] for i in arr]
         translations = [i[1] for i in arr]
         segment_scores = []
         for h, r in zip(translations, targets):
-            segment_score = sacrebleu.corpus_chrf([h], [[r]])
+            segment_score = sacrebleu.corpus_chrf([h], [[r]], **kwargs)
             segment_scores.append(segment_score.score)
         return segment_scores
 
@@ -296,6 +387,9 @@ class MTask(ConfigurableTask):
     
     def metricx_qe_segments(self, aux=None):
         return self.metricxqe_segments_list
+    
+    def bleu_penalty(self, aux=None):
+        return self._bleu_penalty
 
     def get_translations(self, arr):
         translations = [i for i in arr]
@@ -310,7 +404,7 @@ class MTask(ConfigurableTask):
         return sources
 
     def load_yaml_config(self):
-        YAML_PATH = './lm_eval/extra_metrics/mt_metrics_config.yaml'
+        YAML_PATH = os.environ.get('MT_METRICS_CONFIG', './lm_eval/extra_metrics/mt_metrics_config.yaml')
         
         with open(YAML_PATH, 'r') as file:
             config = yaml.safe_load(file)
@@ -319,8 +413,17 @@ class MTask(ConfigurableTask):
 
         metric_configs = {}
         for metric_name, metric_info in mt_metrics.items():
+            # checkpoint/tokenizer may use ${MT_MODELS_DIR} so no cluster-specific
+            # path is committed; expand from the environment.
+            for key in ("checkpoint", "tokenizer"):
+                if isinstance(metric_info.get(key), str):
+                    metric_info[key] = os.path.expandvars(metric_info[key])
             metric_configs[metric_name] = metric_info
 
+        if os.environ.get("MT_DEFER_NEURAL_METRICS") == "1":
+            for name in ("comet", "comet_kiwi", "bleurt", "xcomet", "xcomet_qe",
+                         "metricx", "metricx_qe"):
+                metric_configs.setdefault(name, {})["compute"] = False
         self.metric_configs = metric_configs
 
     def create_dicts(self, source, target, result):
@@ -330,9 +433,11 @@ class MTask(ConfigurableTask):
         if self.metric_configs['bleu']['compute']: 
             res["bleu"] = (target, result)
             res["bleu_segments"] = (target, result)
+            res["bleu_penalty"] = (None)
 
             dict_aggregated["bleu"] = self.bleu_corpus
             dict_aggregated["bleu_segments"] = self.bleu_segments
+            dict_aggregated["bleu_penalty"] = self.bleu_penalty
 
         if self.metric_configs['ter']['compute']: 
             res["ter"] = (target, result)
@@ -399,6 +504,10 @@ class MTask(ConfigurableTask):
             dict_aggregated["metricx_qe"] = self.metricx_qe_corpus
             dict_aggregated["metricx_qe_segments"] = self.metricx_qe_segments
 
+        if self.metric_configs["blonde"]["compute"]:
+            res["blonde"] = (target, result)
+            dict_aggregated["blonde"] = self.blonde_corpus
+
         res["sources"] = (source)
         res["targets"] = (target)
         res["translations"] = (result)
@@ -439,7 +548,10 @@ class MTask(ConfigurableTask):
         Returns:
             dict: A dictionary where keys are metric names and values are booleans indicating if higher values are better.
         """
-        return {k: True for k in METRICS_MT}
+        # TER and MetricX are error scores: lower is better.
+        lower_is_better = {"ter", "ter_segments", "metricx", "metricx_segments",
+                           "metricx_qe", "metricx_qe_segments"}
+        return {k: k not in lower_is_better for k in METRICS_MT}
     
     def get_target(self):
         return None
@@ -530,6 +642,7 @@ class MTask(ConfigurableTask):
         self,
         *,
         limit: Union[int, None] = None,
+        samples=None,
         rank: int = 0,
         world_size: int = 1,
         cache_requests: bool = False,
@@ -539,10 +652,14 @@ class MTask(ConfigurableTask):
         fewshot_as_multiturn: bool = False,
         chat_template: Optional[Callable] = None,
         tokenizer_name: str = "",
-        mt_kwargs = None
+        mt_kwargs = None,
+        **kwargs,
     ) -> None:
         """Build a set of Instances for a task, and store them in task.instances"""
 
+        # Selected documents must never reuse requests cached for another selection.
+        if samples is not None:
+            cache_requests = False
         self.load_yaml_prompts()
 
         # used with caching
@@ -585,7 +702,7 @@ class MTask(ConfigurableTask):
             limit = None
 
         doc_id_docs = list(
-            self.doc_iterator(rank=rank, limit=limit, world_size=world_size)
+            self.doc_iterator(rank=rank, limit=limit, world_size=world_size, samples=samples)
         )
 
         num_docs = len(doc_id_docs)
@@ -640,3 +757,14 @@ class MTask(ConfigurableTask):
 
         if cache_requests and (not cached_instances or rewrite_requests_cache):
             save_to_cache(file_name=cache_key, obj=instances)
+
+
+@functools.lru_cache(maxsize=None)
+def is_mt_task(task_name):
+    """Whether `task_name` is registered as an MT task (a subclass of MTask)."""
+    from lm_eval.api.registry import TASK_REGISTRY
+
+    try:
+        return task_name in TASK_REGISTRY and issubclass(TASK_REGISTRY[task_name], MTask)
+    except Exception:
+        return False

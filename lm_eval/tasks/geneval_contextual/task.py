@@ -113,6 +113,22 @@ class GENEVAL_CONTEXTUAL(MTask):
         return accuracy
 
 
+@register_task("en_ca_geneval_contextual")
+class GENEVAL_CONTEXTUAL_EN_CA(GENEVAL_CONTEXTUAL):
+    def __init__(self, config=None):
+        super().__init__(config={'target_delimiter': '', 'validation_split':'en_ca'})
+
+    def get_target(self):
+        return 'cat_Latn'
+
+@register_task("en_nl_geneval_contextual")
+class GENEVAL_CONTEXTUAL_EN_NL(GENEVAL_CONTEXTUAL):
+    def __init__(self, config=None):
+        super().__init__(config={'target_delimiter': '', 'validation_split':'en_nl'})
+
+    def get_target(self):
+        return 'nld_Latn'
+
 @register_task("en_ar_geneval_contextual")
 class GENEVAL_CONTEXTUAL_EN_AR(GENEVAL_CONTEXTUAL):
     def __init__(self, config=None):

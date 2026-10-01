@@ -1,10 +1,11 @@
 import logging
 import math
+import os
 import random
 import re
 import string
 from collections.abc import Iterable
-from typing import List
+from typing import Callable, List, Optional, Sequence, TypeVar
 
 import numpy as np
 import sacrebleu
@@ -12,13 +13,22 @@ import sacrebleu
 from lm_eval.api.registry import register_aggregation, register_metric
 
 
-eval_logger = logging.getLogger("lm-eval")
+T = TypeVar("T")
+
+eval_logger = logging.getLogger(__name__)
 
 
 # Register Aggregations First
 @register_aggregation("bypass")
 def bypass_agg(arr):
     return 999
+
+
+@register_aggregation("nanmean")
+def nanmean(arr):
+    if len(arr) == 0 or all(np.isnan(arr)):
+        return np.nan
+    return np.nanmean(arr)
 
 
 @register_aggregation("mean")
@@ -28,7 +38,7 @@ def mean(arr):
 
 @register_aggregation("median")
 def median(arr):
-    return arr[len(arr) // 2]
+    return sorted(arr)[len(arr) // 2]
 
 
 # Certain metrics must be calculated across all documents in a benchmark.
@@ -90,17 +100,41 @@ def bleu(items):
 
 @register_aggregation("chrf")
 def chrf(items):
-    """chrF++ is a tool for automatic evaluation of machine translation output
-    based on character n-gram precision and recall enhanced with word n-grams.
+    """chrF is an evaluation metric for machine translation output based on
+    character n-gram precision and recall.
+
+    Computed with sacrebleu's defaults: char_order=6, word_order=0, beta=2.
+    For chrF++ (word_order=2), use the ``chrf++`` metric instead.
+
     Source: https://github.com/m-popovic/chrF
     Paper: https://www.aclweb.org/anthology/W15-3049.pdf
 
-    Higher is better  # TODO I think
+    Higher is better
     """
     refs = list(zip(*items))[0]
     preds = list(zip(*items))[1]
     refs, preds = _sacreformat(refs, preds)
     return sacrebleu.corpus_chrf(preds, refs).score
+
+
+@register_aggregation("chrf++")
+def chrfpp(items):
+    """chrF++ is chrF extended with word n-grams, for automatic evaluation of
+    machine translation output.
+
+    Computed with word_order=2 and sacrebleu's remaining defaults:
+    char_order=6, beta=2. For plain chrF (word_order=0), use the ``chrf``
+    metric instead.
+
+    Source: https://github.com/m-popovic/chrF
+    Paper: https://aclanthology.org/W17-4770.pdf
+
+    Higher is better
+    """
+    refs = list(zip(*items))[0]
+    preds = list(zip(*items))[1]
+    refs, preds = _sacreformat(refs, preds)
+    return sacrebleu.corpus_chrf(preds, refs, word_order=2).score
 
 
 @register_aggregation("ter")
@@ -166,6 +200,16 @@ def acc_norm_fn(items):  # This is a passthrough function
     aggregation="mean",
 )
 def acc_mutual_info_fn(items):  # This is a passthrough function
+    return items
+
+
+@register_metric(
+    metric="acc_bytes",
+    higher_is_better=True,
+    output_type=["loglikelihood", "multiple_choice"],
+    aggregation="mean",
+)
+def acc_bytes_fn(items):  # This is a passthrough function
     return items
 
 
@@ -246,6 +290,16 @@ def perplexity_fn(items):  # This is a passthrough function
 
 
 @register_metric(
+    metric="likelihood",
+    higher_is_better=True,
+    output_type="multiple_choice",
+    aggregation="mean",
+)
+def likelihood_fn(items):  # This is a passthrough function
+    return items
+
+
+@register_metric(
     metric="word_perplexity",
     higher_is_better=False,
     output_type="loglikelihood_rolling",
@@ -280,7 +334,7 @@ def pop_stddev(arr):
     return math.sqrt(sum([(x - mu) ** 2 for x in arr]) / len(arr))
 
 
-def sample_stddev(arr):
+def sample_stddev(arr: Sequence[T]) -> float:
     mu = mean(arr)
     return math.sqrt(sum([(x - mu) ** 2 for x in arr]) / (len(arr) - 1))
 
@@ -340,8 +394,18 @@ def chrf_fn(items):  # This is a passthrough function
 
 
 @register_metric(
-    metric="ter",
+    metric="chrf++",
     higher_is_better=True,
+    output_type="generate_until",
+    aggregation="chrf++",
+)
+def chrfpp_fn(items):  # This is a passthrough function
+    return items
+
+
+@register_metric(
+    metric="ter",
+    higher_is_better=False,
     output_type="generate_until",
     aggregation="ter",
 )
@@ -442,11 +506,16 @@ def _sacreformat(refs, preds):
 
 
 class _bootstrap_internal:
-    def __init__(self, f, n) -> None:
+    """
+    Pool worker: `(i, xs)` → `n` bootstrap replicates
+    of `f(xs)`using a RNG seeded with `i`.
+    """
+
+    def __init__(self, f: Callable[[Sequence[T]], float], n: int) -> None:
         self.f = f
         self.n = n
 
-    def __call__(self, v):
+    def __call__(self, v: tuple[int, Sequence[T]]) -> list[float]:
         i, xs = v
         rnd = random.Random()
         rnd.seed(i)
@@ -456,36 +525,79 @@ class _bootstrap_internal:
         return res
 
 
-def bootstrap_stderr(f, xs, iters):
-    import multiprocessing as mp
-
-    pool = mp.Pool(mp.cpu_count())
-    # this gives a biased estimate of the stderr (i.e w/ the mean, it gives something
-    # equivalent to stderr calculated without Bessel's correction in the stddev.
-    # Unfortunately, I haven't been able to figure out what the right correction is
-    # to make the bootstrap unbiased - i considered multiplying by sqrt(n/(n-1)) but
-    # that would be ad-hoc and I can't prove that that would actually be an unbiased estimator)
-    # Thankfully, shouldn't matter because our samples are pretty big usually anyways
+def _bootstrap_internal_no_mp(
+    f: Callable[[Sequence[T]], float], xs: Sequence[T], iters: int
+) -> list[float]:
+    """
+    Single-process fallback: compute `iters` bootstrap replicates
+    of statistic`f(xs)`, chunked (≤ 1000 draws).
+    """
     res = []
     chunk_size = min(1000, iters)
     from tqdm import tqdm
 
-    print("bootstrapping for stddev:", f.__name__)
-    for bootstrap in tqdm(
-        pool.imap(
-            _bootstrap_internal(f, chunk_size),
-            [(i, xs) for i in range(iters // chunk_size)],
-        ),
-        total=iters // chunk_size,
-    ):
-        # sample w replacement
-        res.extend(bootstrap)
+    print(f"bootstrapping for stddev: {f.__name__}")
 
-    pool.close()
+    # A single loop replaces the multiprocessing pool.
+    for i in tqdm(range(iters // chunk_size)):
+        rnd = random.Random(i)
+        for _ in range(chunk_size):
+            res.append(f(rnd.choices(xs, k=len(xs))))
+
+    return res
+
+
+def bootstrap_stderr(
+    f: Callable[[Sequence[T]], float], xs: Sequence[T], iters: int
+) -> float:
+    """
+    Bootstrap estimate of the standard error of statistic `f(xs)`
+    using up to `iters` resamples, chunked (≤ 1000 draws)
+
+    Executes in parallel unless the env-var `DISABLE_MULTIPROC` is set;
+    """
+    if not os.getenv("DISABLE_MULTIPROC"):
+        import multiprocessing as mp
+
+        # this gives a biased estimate of the stderr (i.e w/ the mean, it gives something
+        # equivalent to stderr calculated without Bessel's correction in the stddev.
+        # Unfortunately, I haven't been able to figure out what the right correction is
+        # to make the bootstrap unbiased - i considered multiplying by sqrt(n/(n-1)) but
+        # that would be ad-hoc and I can't prove that that would actually be an unbiased estimator)
+        # Thankfully, shouldn't matter because our samples are pretty big usually anyways
+        res = []
+        chunk_size = min(1000, iters)
+        from tqdm import tqdm
+
+        print("bootstrapping for stddev:", f.__name__)
+        with mp.Pool(mp.cpu_count()) as pool:
+            for bootstrap in tqdm(
+                pool.imap(
+                    _bootstrap_internal(f, chunk_size),
+                    [(i, xs) for i in range(iters // chunk_size)],
+                ),
+                total=iters // chunk_size,
+            ):
+                # sample w replacement
+                res.extend(bootstrap)
+    else:
+        res = _bootstrap_internal_no_mp(f, xs, iters)
+
     return sample_stddev(res)
 
 
-def stderr_for_metric(metric, bootstrap_iters: int):
+def stderr_for_metric(
+    metric: Callable[[Sequence[T]], float], bootstrap_iters: int
+) -> Optional[Callable[[Sequence[T]], float]]:
+    """
+    Return a function that estimates the standard error of `metric(xs)`.
+
+    * If `bootstrap_iters > 0` and the metric is in the pre-approved
+      bootstrappable list, use `bootstrap_stderr` with that many draws.
+    * If the metric has a closed-form SE (e.g. `mean`, `acc_all`), use it.
+    * Otherwise, return `None`.
+    """
+
     if bootstrap_iters <= 0:
         # return no function (don't compute stderr) if bootstrap iters = 0
         return None
@@ -497,7 +609,9 @@ def stderr_for_metric(metric, bootstrap_iters: int):
         perplexity,
         bleu,
         chrf,
+        chrfpp,
         ter,
+        nanmean,
     ]
 
     if metric in bootstrappable:
@@ -526,10 +640,21 @@ def pooled_sample_stderr(stderrs: List[float], sizes: List[int]):
     return np.sqrt(pooled_sample_var / sum(sizes))
 
 
+def unweighted_mean_stderr(stderrs: List[float]) -> float:
+    # Used to aggregate stderrs across subtasks in a group when we are NOT weighting
+    # by subtask size (weight_by_size=False), i.e. the group score is the simple
+    # unweighted mean of the k subtask means. For k independent subtask means,
+    # Var(mean) = (1 / k**2) * sum(se_i**2), so the stderr is sqrt(sum(se_i**2)) / k.
+    # (This coincides exactly with pooled_sample_stderr when all subtasks are the same
+    # size; it diverges only for unequal sizes, which is precisely the case the pooled
+    # formula mis-handles for an unweighted mean.)
+    return np.sqrt(sum(stderr**2 for stderr in stderrs)) / len(stderrs)
+
+
 def combined_sample_stderr(stderrs: List[float], sizes: List[int], metrics=None):
-    assert (
-        metrics is not None
-    ), "Need to pass a list of each subtask's metric for this stderr aggregation"
+    assert metrics is not None, (
+        "Need to pass a list of each subtask's metric for this stderr aggregation"
+    )
     assert len(stderrs) == len(sizes) and len(sizes) == len(metrics)
 
     # See https://github.com/EleutherAI/lm-evaluation-harness/pull/1390 for more documentation.

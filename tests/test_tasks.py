@@ -1,31 +1,48 @@
 import os
 from itertools import islice
+from typing import cast
 
+import datasets
 import pytest
 
-import lm_eval.tasks as tasks
 from lm_eval.api.task import ConfigurableTask
-from lm_eval.evaluator_utils import get_task_list
+from lm_eval.tasks import TaskManager
 
 from .utils import new_tasks
 
 
+datasets.config.HF_DATASETS_TRUST_REMOTE_CODE = True
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
-task_manager = tasks.TaskManager()
 # Default Task
 TASKS = ["arc_easy"]
 
 
-def task_class():
-    global TASKS
+def get_new_tasks_else_default():
+    """
+    Check if any modifications have been made to built-in tasks and return
+    the list, otherwise return the default task list
+    """
     # CI: new_tasks checks if any modifications have been made
-    task_classes = new_tasks()
+    task_list = new_tasks()
     # Check if task_classes is empty
-    task_classes = task_classes if task_classes else TASKS
-    res = tasks.get_task_dict(task_classes, task_manager)
-    res = [x.task for x in get_task_list(res)]
+    return task_list or TASKS
 
-    return res
+
+def task_class(
+    task_names: list[str], task_manager: TaskManager | None = None
+) -> list[ConfigurableTask]:
+    """
+    Convert a list of task names to a list of ConfigurableTask instances
+    """
+    if task_manager is None:
+        from lm_eval.tasks import TaskManager
+
+        task_manager = TaskManager()
+
+    res = task_manager.load(task_names)
+    res = res["tasks"]
+
+    return cast("list[ConfigurableTask]", res.values())
 
 
 @pytest.fixture()
@@ -33,11 +50,15 @@ def limit() -> int:
     return 10
 
 
-# Tests
-@pytest.mark.parametrize("task_class", task_class(), ids=lambda x: f"{x.config.task}")
-class TestNewTasks:
+class BaseTasks:
+    """
+    Base class for testing tasks
+    """
+
     def test_download(self, task_class: ConfigurableTask):
-        task_class.download()
+        # Pass the task's own dataset_kwargs, the same way __init__ does.
+        # Without them a task that relies on e.g. data_files cannot be loaded.
+        task_class.download(task_class.config.dataset_kwargs)
         assert task_class.dataset is not None
 
     def test_has_training_docs(self, task_class: ConfigurableTask):
@@ -77,10 +98,19 @@ class TestNewTasks:
         )
         _array = [task.doc_to_text(doc) for doc in arr]
         # space convention; allow txt to have length 0 for perplexity-like tasks since the model tacks an <|endoftext|> on
-        assert all(
-            isinstance(x, str) and (x[-1] != " " if len(x) != 0 else True)
-            for x in _array
-        )
+        target_delimiter: str = task.config.target_delimiter
+        if not task.multiple_input:
+            for x in _array:
+                assert isinstance(x, str)
+                assert (
+                    (x[-1].isspace() is False if len(x) > 0 else True)
+                    if target_delimiter.isspace()
+                    else True
+                ), (
+                    "doc_to_text ends in a whitespace and target delimiter also a whitespace"
+                )
+        else:
+            pass
 
     def test_create_choices(self, task_class, limit):
         task = task_class
@@ -104,10 +134,12 @@ class TestNewTasks:
         _array_target = [task.doc_to_target(doc) for doc in arr]
         if task._config.output_type == "multiple_choice":
             # TODO<baber>: label can be string or int; add better test conditions
-            assert all(
-                (isinstance(label, int) or isinstance(label, str))
-                for label in _array_target
-            )
+            for label in _array_target:
+                if isinstance(label, list):
+                    # tasks with multiple gold answers (e.g. webqs) return a list of indices
+                    assert all(isinstance(x, int) for x in label)
+                else:
+                    assert isinstance(label, (int, str))
 
     def test_build_all_requests(self, task_class, limit):
         task_class.build_all_requests(rank=1, limit=limit, world_size=1)
@@ -121,5 +153,55 @@ class TestNewTasks:
             if task.has_test_docs()
             else list(islice(task.validation_docs(), limit))
         )
-        requests = [task.construct_requests(doc, task.doc_to_text(doc)) for doc in arr]
+        # ctx is "" for multiple input tasks
+        requests = [
+            task.construct_requests(
+                doc=doc, ctx="" if task.multiple_input else task.doc_to_text(doc)
+            )
+            for doc in arr
+        ]
         assert len(requests) == limit if limit else True
+
+
+@pytest.mark.parametrize(
+    "task_class",
+    task_class(get_new_tasks_else_default()),
+    ids=lambda x: f"{x.config.task}",
+)
+class TestNewTasksElseDefault(BaseTasks):
+    """
+    Test class parameterized with a list of new/modified tasks
+    (or a set of default tasks if none have been modified)
+    """
+
+
+@pytest.mark.parametrize(
+    "task_cls_path",
+    [
+        "lm_eval.tasks.fda.task:FDA",
+        "lm_eval.tasks.swde.task:SWDE",
+        "lm_eval.tasks.squad_completion.task:SQUADCompletion",
+    ],
+    ids=["fda", "swde", "squad_completion"],
+)
+def test_strip_whitespace_in_target_and_metric(task_cls_path):
+    """Regression test for the FDA/SWDE/SQuAD_completion whitespace strip.
+
+    doc_to_text and doc_to_target strip surrounding whitespace, and
+    process_results must route the gold answer through doc_to_target so the
+    `contains` metric compares against the stripped target. Otherwise an
+    otherwise-correct prediction misses on the surrounding whitespace.
+    """
+    import importlib
+
+    module_path, cls_name = task_cls_path.split(":")
+    cls = getattr(importlib.import_module(module_path), cls_name)
+    task = cls()
+
+    doc = {"text": "  prompt  ", "value": "  answer  "}
+
+    assert task.doc_to_text(doc) == "prompt"
+    assert task.doc_to_target(doc) == "answer"
+    # The prediction has no surrounding whitespace; with the unstripped target
+    # this would be {"contains": 0}.
+    assert task.process_results(doc, ["answer"]) == {"contains": 1}

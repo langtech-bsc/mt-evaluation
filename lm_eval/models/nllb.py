@@ -19,7 +19,14 @@ from lm_eval.api.instance import Instance
 from lm_eval.api.model import LM
 from lm_eval.api.registry import register_model
 
-from lm_eval.models.utils import MultiTokenEOSCriteria, stop_sequences_criteria, get_dtype
+from lm_eval.models.utils_hf import (
+    MultiTokenEOSCriteria,
+    clear_torch_cache,
+    get_dtype,
+    pad_and_concat,
+    stop_sequences_criteria,
+)
+from lm_eval.utils import get_rolling_token_windows, make_disjoint_window
 from lm_eval.models import utils
 
 from accelerate import Accelerator, find_executable_batch_size, DistributedType
@@ -198,22 +205,30 @@ class NLLB(LM):
                 assert (
                     transformers.__version__ >= "4.30.0"
                 ), "load_in_4bit requires transformers >= 4.30.0"
-            if transformers.__version__ >= "4.30.0":
-                model_kwargs["load_in_4bit"] = load_in_4bit
+            # Transformers 5 no longer accepts load_in_8bit/load_in_4bit in
+            # from_pretrained; quantization goes through BitsAndBytesConfig,
+            # and is only passed when requested.
+            if load_in_8bit or load_in_4bit:
+                bnb_kwargs = {"load_in_8bit": load_in_8bit, "load_in_4bit": load_in_4bit}
                 if load_in_4bit:
                     if bnb_4bit_quant_type:
-                        model_kwargs["bnb_4bit_quant_type"] = bnb_4bit_quant_type
+                        bnb_kwargs["bnb_4bit_quant_type"] = bnb_4bit_quant_type
                     if bnb_4bit_compute_dtype:
-                        model_kwargs["bnb_4bit_compute_dtype"] = get_dtype(
+                        bnb_kwargs["bnb_4bit_compute_dtype"] = get_dtype(
                             bnb_4bit_compute_dtype
                         )
+                model_kwargs["quantization_config"] = transformers.BitsAndBytesConfig(**bnb_kwargs)
+            dtype_arg = (
+                "dtype"
+                if version.parse(transformers.__version__) >= version.parse("4.56.0")
+                else "torch_dtype"
+            )
             self._model = self.AUTO_MODEL_CLASS.from_pretrained(
                 pretrained,
                 revision=revision,
-                torch_dtype=get_dtype(dtype),
+                **{dtype_arg: get_dtype(dtype)},
                 low_cpu_mem_usage=low_cpu_mem_usage,
                 trust_remote_code=trust_remote_code,
-                load_in_8bit=load_in_8bit,
                 attn_implementation='eager',
                 **model_kwargs,
             )
@@ -246,7 +261,9 @@ class NLLB(LM):
 
         # forever after, access self._model through self.model property
         self.model.eval()
-        self.model.tie_weights()
+        # Transformers 5 ties weights in from_pretrained already; see HFLM.
+        if version.parse(transformers.__version__) < version.parse("5.0.0"):
+            self.model.tie_weights()
         if gpus <= 1 and not parallelize:
             # place model onto device, if not using HF Accelerate in any form
             try:
@@ -433,10 +450,10 @@ class NLLB(LM):
                 self.accelerator.gather(max_rnk_bs).cpu().detach().numpy().tolist()
             )
             batch_size = min(gathered)
-            utils.clear_torch_cache()
+            clear_torch_cache()
             return batch_size
 
-        utils.clear_torch_cache()
+        clear_torch_cache()
         return batch_size
 
     def tok_encode(
@@ -615,8 +632,8 @@ class NLLB(LM):
         for (string,) in tqdm([req.args for req in requests], disable=(self.rank != 0)):
             rolling_token_windows = list(
                 map(
-                    utils.make_disjoint_window,
-                    utils.get_rolling_token_windows(
+                    make_disjoint_window,
+                    get_rolling_token_windows(
                         token_list=self.tok_encode(string),
                         prefix_token=self.eot_token_id,
                         max_seq_len=self.max_length,
@@ -791,18 +808,18 @@ class NLLB(LM):
             # create encoder attn mask and batched conts, if seq2seq
             call_kwargs = {}
             if self.AUTO_MODEL_CLASS == transformers.AutoModelForCausalLM:
-                batched_inps = utils.pad_and_concat(
+                batched_inps = pad_and_concat(
                     padding_len_inp, inps, padding_side="right"
                 )  # [batch, padding_len_inp]
             elif self.AUTO_MODEL_CLASS == transformers.AutoModelForSeq2SeqLM:
                 # TODO: left-pad encoder inps and mask?
-                batched_inps = utils.pad_and_concat(
+                batched_inps = pad_and_concat(
                     padding_len_inp, inps
                 )  # [batch, padding_len_inp]
-                batched_conts = utils.pad_and_concat(
+                batched_conts = pad_and_concat(
                     padding_len_cont, conts
                 )  # [batch, padding_len_cont]
-                batched_encoder_mask = utils.pad_and_concat(
+                batched_encoder_mask = pad_and_concat(
                     padding_len_inp, encoder_attns
                 )  # [batch, padding_len_inp]
                 call_kwargs = {

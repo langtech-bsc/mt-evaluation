@@ -31,7 +31,7 @@ _LICENSE = "CC BY-SA 4.0."
 
 _LANGUAGES = ['ace_Arab', 'ceb_Latn', 'heb_Hebr', 'lij_Latn', 'pan_Guru', 'taq_Tfng', 'ace_Latn', 'ces_Latn', 'hin_Deva', 
  'lim_Latn', 'pap_Latn', 'tat_Cyrl', 'acm_Arab', 'cjk_Latn', 'hne_Deva', 'lin_Latn', 'pbt_Arab', 'tel_Telu', 
- 'acq_Arab', 'ckb_Arab', 'hrv_Latn', 'lit_Latn', 'pes_Arab', 'tgk_Cyrl', 'aeb_Arab', 'cmn_Hans', 'hun_Latn', 
+ 'acq_Arab', 'ckb_Arab', 'hrv_Latn', 'lit_Latn', 'pes_Arab', 'tgk_Cyrl', 'aeb_Arab', 'cmn_Hans', 'hun_Latn', 'lld_Latn', 
  'lmo_Latn', 'plt_Latn', 'tha_Thai', 'afr_Latn', 'cmn_Hant', 'hye_Armn', 'ltg_Latn', 'pol_Latn', 'tir_Ethi', 
  'als_Latn', 'crh_Latn', 'ibo_Latn', 'ltz_Latn', 'por_Latn', 'tpi_Latn', 'amh_Ethi', 'cym_Latn', 'ilo_Latn', 
  'lua_Latn', 'prs_Arab', 'tsn_Latn', 'apc_Arab_nort3139', 'dan_Latn', 'ind_Latn', 'lug_Latn', 'quy_Latn', 
@@ -52,7 +52,7 @@ _LANGUAGES = ['ace_Arab', 'ceb_Latn', 'heb_Hebr', 'lij_Latn', 'pan_Guru', 'taq_T
  'kmr_Latn', 'nso_Latn', 'sun_Latn', 'zul_Latn', 'bod_Tibt', 'glg_Latn', 'knc_Arab', 'nus_Latn', 'swe_Latn', 
  'bos_Latn', 'gug_Latn', 'knc_Latn', 'nya_Latn', 'swh_Latn', 'bug_Latn', 'guj_Gujr', 'kor_Hang', 'oci_Latn', 
  'szl_Latn', 'bul_Cyrl', 'hat_Latn', 'ktu_Latn', 'ory_Orya', 'tam_Taml', 'cat_Latn', 'hau_Latn', 'lao_Laoo', 
- 'pag_Latn', 'taq_Latn', 'arg_Latn', 'arn_Latn', 'val_Latn']
+ 'pag_Latn', 'taq_Latn', 'arg_Latn', 'arn_Latn', 'val_Latn', 'srp_Latn']
 
 
 _URL = "flores+_dataset_devtest"
