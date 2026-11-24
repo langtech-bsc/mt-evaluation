@@ -73,3 +73,15 @@ mt_metrics:
 
   bleu_penalty:
     compute: True
+
+  llm_judge:
+    compute: False                  # run the judge in scripts/run_mt_v3.sh (stage 3, vLLM env); needs tensor_parallel_size GPUs
+    name: auto                      # auto = built from the settings below, e.g. gemba_esa_gemma_4_31b_noref_raw_bf16; or a fixed result key prefix
+    model: "${MT_MODELS_DIR}/gemma-4-31B-it"
+    quantization: fp8              # none = bf16 weights (2 GPUs); fp8 = fp8 weights (fits 1 GPU, set tensor_parallel_size: 1)
+    tensor_parallel_size: 1         # number of GPUs (31B in bf16 needs 2)
+    max_model_len: 16384
+    use_reference: False            # True = show the reference to the judge; False = reference-free
+    stage2_input: raw               # Stage 2 gets the raw Stage 1 answer ("raw", as in GEMBA) or the parsed spans ("parsed", as in WMT26)
+    reference_type: "human"         # if use_reference: "human" | "postedit" | "pseudo"
+    domain_requirements: ""         # free text added to the prompt; empty = "The translation should be accurate and fluent."; news/speech/social/software/edu/...

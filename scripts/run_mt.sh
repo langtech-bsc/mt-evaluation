@@ -2,13 +2,11 @@
 set -euo pipefail
 : "${GEN_PYTHON:?Set GEN_PYTHON to the v5 environment python}"
 : "${METRIC_PYTHON:?Set METRIC_PYTHON to the v4 environment python}"
-: "${MT_MODELS_DIR:?Set MT_MODELS_DIR to the directory holding the metric checkpoints (BLEURT-20, google_mt5_xl, google_metricx_23_xl_v2p0, google_metricx_23_qe_xl_v2p0)}"
-export MT_MODELS_DIR
 : "${GEN_MODULES:=intel impi mkl hdf5 python/3.12.1}"
 : "${METRIC_MODULES:=EB/apps Python/3.10.8-GCCcore-12.2.0}"
 
 if (( $# < 2 )); then
-    echo 'Usage: run_mt.sh OUTPUT.json [lm_eval arguments]' >&2
+    echo 'Usage: run_mt_v3.sh OUTPUT.json [lm_eval arguments]' >&2
     exit 2
 fi
 repo_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -61,7 +59,6 @@ load_stage_modules() {
     read -r -a requested_modules <<< "$module_names"
     module load "${requested_modules[@]}" || return 1
     unset PYTHONHOME PYTHONPATH
-    export PYTHONNOUSERSITE=1   # keep ~/.local out; the venv must be self-contained
     set -u
 }
 
@@ -94,8 +91,6 @@ fi
 
 (
     load_stage_modules "$METRIC_MODULES"
-    # torch>=2.6 defaults torch.load to weights_only=True; allow the neural
-    # metric checkpoints (BLEURT/MetricX/COMET) to load as before.
     export TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1
     "$METRIC_PYTHON" -c 'import sys, torch, transformers; print(sys.executable, sys.version, transformers.__version__, torch.__version__, flush=True); assert transformers.__version__.split(".")[0] == "4", "Scoring requires Transformers v4"'
     "$METRIC_PYTHON" -m neural_scoring.score --input "$output" --validate-only
@@ -103,3 +98,8 @@ fi
         --output "$output" \
         --config "${MT_METRICS_CONFIG:-$repo_dir/lm_eval/extra_metrics/mt_metrics_config.yaml}"
 )
+
+# Optional LLM judge (llm_judge.compute in the metrics config), in the Transformers-5 / vLLM environment.
+# Skipped with a warning when fewer GPUs are visible than it needs; see scripts/run_llm_judge.sh.
+bash "$repo_dir/scripts/run_llm_judge.sh" \
+    "${MT_METRICS_CONFIG:-$repo_dir/lm_eval/extra_metrics/mt_metrics_config.yaml}" "$output"
